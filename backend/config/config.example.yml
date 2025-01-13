@@ -1,0 +1,31 @@
+app:
+  name: "GrayLink"
+  debug: true
+  secret_key: "your-secret-key-here"
+
+monitor:
+  interval: 300
+  batch_size: 100
+  max_retries: 3
+
+symlink:
+  source_dir: "/mnt/media/nastool"
+  target_dir: "/mnt/nastool-nfo"
+  preserve_structure: true
+  backup_on_conflict: true
+  conflict_strategy: "skip"
+
+emby:
+  host: "http://emby:8096"
+  api_key: ""
+  auto_refresh: true
+  refresh_delay: 10
+  path_mapping: {}
+
+security:
+  max_login_attempts: 5
+  session_timeout: 3600
+  password_policy:
+    min_length: 8
+    require_special: true
+    require_numbers: true 
