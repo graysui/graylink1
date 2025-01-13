@@ -31,10 +31,8 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  Monitor,
-  VideoPlay,
-  Link,
-  Setting
+  Fold,
+  ArrowDown
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

@@ -1,29 +1,16 @@
-import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
+import type { Router, RouteRecordRaw, RouteLocationRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
-  {
-    path: '/',
-    name: 'Root',
-    component: () => import('@/views/layout/BasicLayout.vue'),
-    meta: { requiresAuth: true },
-    children: [
-      {
-        path: 'monitor',
-        name: 'Monitor',
-        component: () => import('@/views/monitor/index.vue'),
-        meta: {
-          title: '监控中心',
-          icon: 'Monitor'
-        }
-      }
-    ]
-  }
+  // ... 你的路由配置
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
-})
+  routes,
+}) as Router & {
+  push: (to: RouteLocationRaw) => Promise<void>
+  replace: (to: RouteLocationRaw) => Promise<void>
+}
 
-export default router 
+export default router

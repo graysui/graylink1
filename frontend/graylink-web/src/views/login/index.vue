@@ -4,21 +4,12 @@
       <template #header>
         <h2 class="login-title">系统登录</h2>
       </template>
-      
-      <el-form
-        ref="loginFormRef"
-        :model="loginForm"
-        :rules="loginRules"
-        label-width="0"
-      >
+
+      <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" label-width="0">
         <el-form-item prop="username">
-          <el-input
-            v-model="loginForm.username"
-            placeholder="用户名: admin"
-            prefix-icon="User"
-          />
+          <el-input v-model="loginForm.username" placeholder="用户名: admin" prefix-icon="User" />
         </el-form-item>
-        
+
         <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
@@ -30,12 +21,7 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button
-            type="primary"
-            :loading="loading"
-            class="login-button"
-            @click="handleLogin"
-          >
+          <el-button type="primary" :loading="loading" class="login-button" @click="handleLogin">
             登录
           </el-button>
         </el-form-item>
@@ -46,36 +32,56 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import type { RouteLocationRaw } from 'vue-router'
+import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/modules/user'
+import type { LoginForm, AuthError } from '@/types/auth'
 
-const router = useRouter()
-const userStore = useUserStore()
-const loading = ref(false)
-
-const loginForm = reactive({
+const loginFormRef = ref<FormInstance>()
+const loginForm = reactive<LoginForm>({
   username: '',
   password: ''
 })
 
-const loginRules = {
+const loginRules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
+const loading = ref(false)
+const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
+
 const handleLogin = async () => {
+  if (!loginFormRef.value) return
+
   try {
+    await loginFormRef.value.validate()
     loading.value = true
     await userStore.login(loginForm)
     ElMessage.success('登录成功')
-    router.push('/')
+    const redirect = (route.query.redirect as string) || '/'
+    router.push(redirect)
   } catch (error) {
-    ElMessage.error('用户名或密码错误')
+    if (error instanceof AuthError) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error('登录失败，请重试')
+    }
   } finally {
     loading.value = false
   }
+}
+
+const handleRegister = () => {
+  const registerRoute: RouteLocationRaw = {
+    path: '/register',
+    query: route.query,
+  }
+  router.push(registerRoute)
 }
 </script>
 
@@ -101,4 +107,4 @@ const handleLogin = async () => {
 .login-button {
   width: 100%;
 }
-</style> 
+</style>

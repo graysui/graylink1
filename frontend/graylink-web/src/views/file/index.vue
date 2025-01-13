@@ -10,7 +10,7 @@
           {{ item.name }}
         </el-breadcrumb-item>
       </el-breadcrumb>
-      
+
       <div class="actions">
         <el-button-group>
           <el-button
@@ -39,7 +39,7 @@
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" />
-      
+
       <el-table-column
         prop="name"
         label="名称"
@@ -59,7 +59,7 @@
           </div>
         </template>
       </el-table-column>
-      
+
       <el-table-column
         prop="size"
         label="大小"
@@ -70,7 +70,7 @@
           {{ formatFileSize(row.size) }}
         </template>
       </el-table-column>
-      
+
       <el-table-column
         prop="modified_time"
         label="修改时间"
@@ -81,7 +81,7 @@
           {{ formatTime(row.modified_time) }}
         </template>
       </el-table-column>
-      
+
       <el-table-column
         label="操作"
         width="150"
@@ -163,19 +163,19 @@
       :visible="previewVisible"
       @update:visible="previewVisible = $event"
     />
-    
+
     <upload-dialog
       v-model="uploadVisible"
       :current-path="currentPath"
       @success="refreshList"
     />
-    
+
     <move-dialog
       v-model="moveVisible"
       :files="selectedFiles"
       @success="handleOperationSuccess"
     />
-    
+
     <copy-dialog
       v-model="copyVisible"
       :files="selectedFiles"
@@ -368,6 +368,18 @@ onBeforeUnmount(() => {
 // 重命名避免冲突
 const CopyIcon = DocumentIcon
 const FolderFilledIcon = FolderAdd
+
+const loadFiles = async (path: string) => {
+  await fileStore.getSnapshot(path)
+}
+
+const setSorting = (prop: string, order: string) => {
+  fileStore.setSorting(prop, order === 'descending')
+}
+
+const batchOperation = async (operation: string, paths: string[]) => {
+  await fileStore.batchOperation(operation, paths)
+}
 </script>
 
 <style scoped lang="scss">
@@ -378,21 +390,21 @@ const FolderFilledIcon = FolderAdd
     align-items: center;
     margin-bottom: 16px;
   }
-  
+
   .file-name {
     display: flex;
     align-items: center;
     gap: 8px;
-    
+
     .name {
       cursor: pointer;
-      
+
       &:hover {
         color: var(--el-color-primary);
       }
     }
   }
-  
+
   .batch-toolbar {
     position: fixed;
     bottom: 0;
@@ -405,10 +417,10 @@ const FolderFilledIcon = FolderAdd
     justify-content: space-between;
     align-items: center;
     z-index: 100;
-    
+
     .info {
       color: #666;
     }
   }
 }
-</style> 
+</style>

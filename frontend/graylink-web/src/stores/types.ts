@@ -1,4 +1,5 @@
 import type { Ref } from 'vue'
+import type { SystemSettings } from '@/types/api'
 
 export interface UserState {
   token: Ref<string | null>
@@ -33,9 +34,8 @@ export interface MonitorState {
   stopMonitor: () => Promise<void>
 }
 
-export interface SettingsState {
+export interface SettingStore {
   settings: Ref<SystemSettings>
   loading: Ref<boolean>
   saveSettings: (settings: SystemSettings) => Promise<void>
-  resetSettings: () => Promise<void>
 } 

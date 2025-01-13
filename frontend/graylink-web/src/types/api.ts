@@ -293,4 +293,20 @@ export interface DriveMonitorStatus {
 export interface ActivityResult {
   activities: number
   processed: number
+}
+
+// 添加 DirListItem 类型定义
+export interface DirListItem {
+  name: string
+  isDir: boolean
+  path: string
+  size?: number
+  modTime?: string
+}
+
+// 添加 MonitorLog 类型定义
+export interface MonitorLog {
+  time: string
+  level: 'error' | 'warning' | 'info'
+  message: string
 } 

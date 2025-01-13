@@ -1,95 +1,106 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { fileApi } from '@/api'
-import type { FileInfo, DatabaseStats } from '@/types/api'
-import { useRoute } from 'vue-router'
+import { api } from '@/api'
+import type { ApiResponse } from '@/api'
 
-export const useFileStore = defineStore('file', () => {
-  const route = useRoute()
-  const currentPath = computed(() => route.query.path as string || '/')
-  const files = ref<FileInfo[]>([])
-  const stats = ref<DatabaseStats | null>(null)
-  const loading = ref(false)
+interface FileInfo {
+  name: string
+  path: string
+  size: number
+  type: 'file' | 'directory'
+  modified: string
+  children?: FileInfo[]
+}
 
-  async function loadFiles(path: string) {
-    try {
-      loading.value = true
-      files.value = await fileApi.getSnapshot(path)
-      return files.value
-    } finally {
-      loading.value = false
-    }
-  }
+interface FileStats {
+  total_size: number
+  file_count: number
+  dir_count: number
+  last_scan: string
+}
 
-  async function batchOperation(operation: 'delete' | 'move' | 'copy', paths: string[], target?: string) {
-    try {
-      loading.value = true
-      if (operation === 'move' || operation === 'copy') {
-        if (!target) throw new Error('Target path is required for move/copy operations')
-        await fileApi[operation](paths, target)
-      } else {
-        await fileApi[operation](paths)
+interface FileState {
+  files: FileInfo[]
+  stats: FileStats | null
+  loading: boolean
+  currentPath: string
+}
+
+export const useFileStore = defineStore('file', {
+  state: (): FileState => ({
+    files: [],
+    stats: null,
+    loading: false,
+    currentPath: '/',
+  }),
+
+  actions: {
+    async getSnapshot(path = '/') {
+      this.loading = true
+      try {
+        const response = await api.get<ApiResponse<FileInfo[]>>('/files', {
+          params: { path },
+        })
+        this.files = response.data
+        this.currentPath = path
+      } finally {
+        this.loading = false
       }
-      await loadFiles(currentPath.value)
-    } finally {
-      loading.value = false
-    }
-  }
+    },
 
-  function setSorting(prop: keyof FileInfo, isDesc: boolean) {
-    const sorted = [...files.value].sort((a, b) => {
-      const aValue = a[prop]
-      const bValue = b[prop]
-      if (aValue === undefined || bValue === undefined) return 0
-      return isDesc ? 
-        (String(bValue) > String(aValue) ? 1 : -1) : 
-        (String(aValue) > String(bValue) ? 1 : -1)
-    })
-    files.value = sorted
-  }
+    async moveFiles(paths: string[], target: string) {
+      this.loading = true
+      try {
+        await api.post('/files/move', {
+          paths,
+          target,
+        })
+        await this.getSnapshot(this.currentPath)
+      } finally {
+        this.loading = false
+      }
+    },
 
-  async function getStats() {
-    try {
-      loading.value = true
-      stats.value = await fileApi.getStats()
-      return stats.value
-    } finally {
-      loading.value = false
-    }
-  }
+    async copyFiles(paths: string[], target: string) {
+      this.loading = true
+      try {
+        await api.post('/files/copy', {
+          paths,
+          target,
+        })
+        await this.getSnapshot(this.currentPath)
+      } finally {
+        this.loading = false
+      }
+    },
 
-  async function cleanupDatabase() {
-    try {
-      loading.value = true
-      await fileApi.cleanup()
-      await getStats()
-    } finally {
-      loading.value = false
-    }
-  }
+    async deleteFiles(paths: string[]) {
+      this.loading = true
+      try {
+        await api.post('/files/delete', { paths })
+        await this.getSnapshot(this.currentPath)
+      } finally {
+        this.loading = false
+      }
+    },
 
-  const getFiles = async () => {
-    try {
-      loading.value = true
-      files.value = await fileApi.getSnapshot()
-    } catch (error) {
-      console.error('获取文件列表失败:', error)
-      throw error
-    } finally {
-      loading.value = false
-    }
-  }
+    async getStats() {
+      this.loading = true
+      try {
+        const response = await api.get<ApiResponse<FileStats>>('/files/stats')
+        this.stats = response.data
+      } finally {
+        this.loading = false
+      }
+    },
 
-  return {
-    files,
-    stats,
-    loading,
-    currentPath,
-    loadFiles,
-    batchOperation,
-    setSorting,
-    getStats,
-    cleanupDatabase,
-    getFiles
-  }
-}) 
+    async cleanup() {
+      this.loading = true
+      try {
+        await api.post('/files/cleanup')
+        await this.getStats()
+      } finally {
+        this.loading = false
+      }
+    },
+  },
+})

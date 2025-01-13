@@ -1,8 +1,8 @@
 import axios from 'axios'
-import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+import type { AxiosInstance, AxiosRequestConfig } from 'axios'
 import type { ApiResponse } from '@/types/api'
 
-interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   withCredentials?: boolean
 }
 

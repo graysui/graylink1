@@ -8,14 +8,10 @@
       </div>
       <Sidebar :is-collapse="isCollapse" />
     </el-aside>
-    
+
     <el-container>
       <el-header class="header">
-        <el-button
-          type="text"
-          :icon="isCollapse ? 'Expand' : 'Fold'"
-          @click="toggleCollapse"
-        />
+        <el-button type="text" :icon="isCollapse ? 'Expand' : 'Fold'" @click="toggleCollapse" />
         <div class="header-right">
           <el-dropdown>
             <span class="user-info">
@@ -23,15 +19,13 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="handleLogout">
-                  退出登录
-                </el-dropdown-item>
+                <el-dropdown-item @click="handleLogout"> 退出登录 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
         </div>
       </el-header>
-      
+
       <el-main>
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
@@ -44,15 +38,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
-import { Expand, Fold, ArrowDown } from '@element-plus/icons-vue'
-import Sidebar from './Sidebar.vue'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { RouteLocationRaw } from 'vue-router'
+import type { RouteMeta } from '@/router/types'
 import { useUserStore } from '@/stores/modules/user'
+import Sidebar from './Sidebar.vue'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
 const isCollapse = ref(false)
 
 const toggleCollapse = () => {
@@ -61,15 +57,27 @@ const toggleCollapse = () => {
 
 const handleLogout = async () => {
   try {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-      type: 'warning'
-    })
     await userStore.logout()
-    router.push({ path: '/login' })
-  } catch {
-    // 用户取消操作
+    const loginRoute: RouteLocationRaw = {
+      path: '/login',
+      query: { redirect: route.fullPath },
+    }
+    await router.push(loginRoute)
+  } catch (error) {
+    console.error('登出失败:', error instanceof Error ? error.message : String(error))
   }
 }
+
+const menuItems = computed(() => {
+  return route.matched.map((item) => ({
+    ...item,
+    meta: item.meta as RouteMeta,
+    children: item.children?.map((child) => ({
+      ...child,
+      meta: child.meta as RouteMeta,
+    })),
+  }))
+})
 </script>
 
 <style scoped>
@@ -129,4 +137,4 @@ const handleLogout = async () => {
 .fade-leave-to {
   opacity: 0;
 }
-</style> 
+</style>
