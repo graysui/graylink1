@@ -1,8 +1,25 @@
 // 基础响应类型
 export interface ApiResponse<T> {
-  code: number
-  message: string
   data: T
+  status: string
+  message?: string
+}
+
+export interface PaginationData<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface PaginatedResponse<T> extends Omit<ApiResponse<any>, 'data'> {
+  data: PaginationData<T>
+}
+
+export interface ErrorResponse {
+  error: string
+  message: string
+  status: number
 }
 
 // FileRecord 类型定义
@@ -103,6 +120,7 @@ export interface FileInfo {
 export interface MonitorStatus {
   status: 'running' | 'stopped'
   last_check: string | null
+  interval: number
   stats: {
     total_files: number
     processed_files: number
@@ -150,7 +168,6 @@ export interface SystemSettings {
       watch_folder_id: string
       check_interval: string
       path_mapping: Record<string, string>
-      refresh_token?: string
     }
   }
   symlink: {
@@ -158,7 +175,7 @@ export interface SystemSettings {
     target_dir: string
     preserve_structure: boolean
     backup_on_conflict: boolean
-    conflict_strategy: 'skip' | 'overwrite' | 'rename'
+    conflict_strategy: string
   }
   emby: {
     host: string
@@ -179,8 +196,8 @@ export interface SystemSettings {
   account: {
     username: string
     email: string
-    password?: string
-    confirm_password?: string
+    password: string
+    confirm_password: string
   }
 }
 
@@ -271,4 +288,9 @@ export interface DriveMonitorStatus {
     processed_files: number
     error_count: number
   }
+}
+
+export interface ActivityResult {
+  activities: number
+  processed: number
 } 

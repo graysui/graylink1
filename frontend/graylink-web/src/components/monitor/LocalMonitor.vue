@@ -4,14 +4,14 @@
       <div class="card-header">
         <span>本地文件监控</span>
         <div class="header-actions">
-          <el-tag :type="status.running ? 'success' : 'info'" size="small">
-            {{ status.running ? '运行中' : '已停止' }}
+          <el-tag :type="isRunning ? 'success' : 'info'" size="small">
+            {{ isRunning ? '运行中' : '已停止' }}
           </el-tag>
           <el-button-group>
             <el-button 
               type="primary" 
               size="small"
-              :disabled="status.running"
+              :disabled="isRunning"
               @click="handleStart"
             >
               启动
@@ -19,7 +19,7 @@
             <el-button 
               type="danger" 
               size="small"
-              :disabled="!status.running"
+              :disabled="!isRunning"
               @click="handleStop"
             >
               停止
@@ -38,7 +38,7 @@
           </el-tooltip>
         </el-descriptions-item>
         <el-descriptions-item label="上次扫描">
-          {{ status.last_scan ? formatTime(status.last_scan) : '从未扫描' }}
+          {{ status.last_check ? formatTime(status.last_check) : '从未扫描' }}
         </el-descriptions-item>
       </el-descriptions>
 
@@ -46,7 +46,7 @@
         <h4>扫描统计</h4>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-statistic title="发现新文件" :value="status.stats.new_files" />
+            <el-statistic title="发现新文件" :value="status.stats.total_files" />
           </el-col>
           <el-col :span="12">
             <el-statistic title="已处理文件" :value="status.stats.processed_files" />
@@ -58,83 +58,75 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { InfoFilled } from '@element-plus/icons-vue'
-import { formatTime, formatDuration } from '@/utils/time'
-import { monitorApi, type MonitorStatus } from '@/api/monitor'
+import type { MonitorStatus } from '@/types/api'
+import { monitorApi } from '@/api/monitor'
+import { formatTime, formatDuration } from '@/utils/format'
 
-// 简化状态接口
-interface MonitorStatus {
-  running: boolean
-  interval: number
-  last_scan: string | null
+const status = ref<MonitorStatus>({
+  status: 'stopped',
+  last_check: null,
+  interval: 5000,
   stats: {
-    new_files: number
-    processed_files: number
-  }
-}
-
-const status = reactive<MonitorStatus>({
-  running: false,
-  interval: 300,
-  last_scan: null,
-  stats: {
-    new_files: 0,
-    processed_files: 0
+    total_files: 0,
+    processed_files: 0,
+    pending_files: 0,
+    error_count: 0
   }
 })
 
+const isRunning = computed(() => status.value.status === 'running')
 const loading = ref(false)
+const refreshTimer = ref<number>()
 
-// 加载监控状态
-const loadStatus = async () => {
+const getStatus = async () => {
+  if (loading.value) return
   try {
     loading.value = true
     const { data } = await monitorApi.getStatus()
-    Object.assign(status, data)
+    status.value = data
   } catch (error) {
-    ElMessage.error('加载状态失败')
+    console.error('获取状态失败:', error)
   } finally {
     loading.value = false
   }
 }
 
-// 启动监控
 const handleStart = async () => {
   try {
     await monitorApi.start()
-    status.running = true
+    await getStatus()
     ElMessage.success('监控已启动')
   } catch (error) {
     ElMessage.error('启动失败')
   }
 }
 
-// 停止监控
 const handleStop = async () => {
   try {
     await monitorApi.stop()
-    status.running = false
+    await getStatus()
     ElMessage.success('监控已停止')
   } catch (error) {
     ElMessage.error('停止失败')
   }
 }
 
-// 定时刷新状态
-let refreshTimer: number
 const startRefresh = () => {
-  refreshTimer = window.setInterval(loadStatus, 5000)
+  stopRefresh()
+  refreshTimer.value = window.setInterval(getStatus, 5000)
 }
+
 const stopRefresh = () => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
+  if (refreshTimer.value) {
+    clearInterval(refreshTimer.value)
+    refreshTimer.value = undefined
   }
 }
 
 onMounted(() => {
-  loadStatus()
+  getStatus()
   startRefresh()
 })
 

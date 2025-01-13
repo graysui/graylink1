@@ -78,3 +78,51 @@
 2. 确保配置向后兼容
 3. 添加必要的错误处理
 4. 及时更新文档 
+
+# TypeScript 类型错误修复任务清单
+
+## 1. Element Plus 相关错误
+- [ ] 修复 zh-cn.mjs 声明文件缺失问题 (App.vue)
+- [ ] 修复 ProgressBar 组件类型错误
+- [ ] 修复 Form Rules 类型错误
+- [ ] 添加 @element-plus/icons-vue 类型定义
+
+## 2. 路由相关错误
+- [ ] 添加 NavigationFailure 类型
+- [ ] 添加 RouteRecordNormalized 类型
+- [ ] 修复 Router 类型递归引用问题
+- [ ] 修复字符串路由跳转类型错误 ('/login', '/' 等)
+
+## 3. API/类型定义错误
+- [ ] 添加 SystemSettings 类型定义
+- [ ] 添加 DirListItem 类型定义
+- [ ] 修复 MonitorLog 类型错误
+- [ ] 修复 axios InternalAxiosRequestConfig 错误
+
+## 4. 组件属性错误
+- [ ] 添加 PathSelector 组件缺失方法 (listDir, createDir)
+- [ ] 修复 Setting 组件属性缺失 (server_url, library_path)
+- [ ] 修复 ProgressBar 组件 percentage 属性缺失
+
+## 5. Vue 组件方法错误
+- [ ] 添加 resetForm 方法
+- [ ] 添加 submitForm 方法
+- [ ] 添加 handlePathMappingChange 方法
+
+## 6. Meta 数据错误
+- [ ] 修复 Breadcrumb redirect 属性错误
+- [ ] 添加 refresh_token 属性
+
+## 优先级顺序
+1. Element Plus 类型错误（影响范围最大）
+2. API/类型定义错误（基础类型）
+3. 路由相关错误（核心功能）
+4. 组件属性错误
+5. Vue 组件方法错误
+6. Meta 数据错误
+
+## 注意事项
+- 修复时需要保持类型的严格性
+- 确保修复后不会引入新的类型错误
+- 需要同时更新相关的文档和注释
+- 修改后需要运行完整的类型检查确认问题解决 

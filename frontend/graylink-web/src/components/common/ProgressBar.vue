@@ -15,9 +15,12 @@
 </template>
 
 <script setup lang="ts">
+import type { ProgressProps } from 'element-plus'
+
 defineProps<{
   percentage: number
-  status?: '' | 'success' | 'exception' | 'warning'
+  status?: ProgressProps['status']
+  title?: string
   detail?: string
 }>()
 </script>

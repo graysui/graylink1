@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { SystemSettings } from '@/types/api'
+import type { ApiResponse, SystemSettings } from '@/types/api'
 
 export interface EmbyConnectionTest {
   host: string
@@ -7,23 +7,19 @@ export interface EmbyConnectionTest {
 }
 
 export const settingApi = {
-  // 获取系统设置
   getSettings() {
-    return request.get<SystemSettings>('/settings')
+    return request.get<ApiResponse<SystemSettings>>('/settings')
   },
 
-  // 保存系统设置
-  saveSettings(settings: SystemSettings) {
-    return request.post<void>('/settings', settings)
+  updateSettings(settings: SystemSettings) {
+    return request.post<ApiResponse<void>>('/settings', settings)
   },
 
-  // 测试 Emby 连接
   testEmbyConnection(params: EmbyConnectionTest) {
-    return request.post<void>('/settings/test-emby', params)
+    return request.post<ApiResponse<void>>('/settings/test-emby', params)
   },
 
-  // 重置系统设置
-  resetSettings() {
-    return request.post<void>('/settings/reset')
+  updatePassword(data: { new_password: string }) {
+    return request.post<ApiResponse<void>>('/settings/password', data)
   }
 } 

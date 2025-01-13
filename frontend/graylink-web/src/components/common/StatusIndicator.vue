@@ -20,15 +20,23 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
+import type { TagProps } from 'element-plus'
 
 const props = defineProps<{
-  status: 'success' | 'error' | 'warning' | 'info'
+  status: string
   text?: string
   detail?: string
   effect?: 'light' | 'dark' | 'plain'
 }>()
 
-const statusType = computed(() => props.status)
+const statusType = computed<TagProps['type']>(() => {
+  switch (props.status) {
+    case 'success': return 'success'
+    case 'warning': return 'warning'
+    case 'error': return 'danger'
+    default: return 'info'
+  }
+})
 const statusText = computed(() => props.text || props.status)
 </script>
 

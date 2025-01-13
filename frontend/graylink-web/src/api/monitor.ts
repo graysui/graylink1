@@ -1,34 +1,28 @@
 import request from '@/utils/request'
-
-export interface MonitorStatus {
-  running: boolean
-  interval: number
-  last_scan: string | null
-  stats: {
-    new_files: number
-    processed_files: number
-    error_count: number
-    last_error?: string
-  }
-  config: {
-    watch_paths: string[]
-    excluded_paths: string[]
-  }
-}
+import type { ApiResponse, MonitorStatus, ActivityResult } from '@/types/api'
 
 export const monitorApi = {
-  // 获取监控状态
   getStatus() {
-    return request.get<MonitorStatus>('/monitor/status')
+    return request.get<ApiResponse<MonitorStatus>>('/monitor/status')
   },
 
-  // 启动监控
   start() {
-    return request.post('/monitor/start')
+    return request.post<ApiResponse<void>>('/monitor/start')
   },
 
-  // 停止监控
   stop() {
-    return request.post('/monitor/stop')
+    return request.post<ApiResponse<void>>('/monitor/stop')
+  },
+
+  getLogs(params: { limit: number }) {
+    return request.get<ApiResponse<string[]>>('/monitor/logs', { params })
+  },
+
+  clearLogs() {
+    return request.post<ApiResponse<void>>('/monitor/logs/clear')
+  },
+
+  checkActivities() {
+    return request.get<ApiResponse<ActivityResult>>('/monitor/check-activities')
   }
 } 

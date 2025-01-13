@@ -65,7 +65,7 @@ const handleLogout = async () => {
       type: 'warning'
     })
     await userStore.logout()
-    router.push('/login')
+    router.push({ path: '/login' })
   } catch {
     // 用户取消操作
   }

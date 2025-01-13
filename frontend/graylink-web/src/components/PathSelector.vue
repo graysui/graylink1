@@ -81,11 +81,12 @@ import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Folder } from '@element-plus/icons-vue'
 import { settingApi } from '@/api/setting'
+import type { DirListItem } from '@/api/setting'
 
 const props = defineProps<{
   modelValue: string
-  placeholder?: string
   rootPath?: string
+  placeholder?: string
   createDir?: boolean
 }>()
 
@@ -94,8 +95,9 @@ const emit = defineEmits<{
 }>()
 
 const dialogVisible = ref(false)
-const currentPath = ref('')
+const currentPath = ref(props.modelValue || props.rootPath || '/')
 const dirList = ref<{ name: string }[]>([])
+const showNewDirDialog = ref(false)
 const newDirName = ref('')
 const localValue = ref(props.modelValue)
 
@@ -114,8 +116,7 @@ const navigateTo = async (index: number) => {
 const loadDirList = async (path: string) => {
   try {
     const { data } = await settingApi.listDir(path)
-    dirList.value = data.map(name => ({ name }))
-    currentPath.value = path
+    dirList.value = data.map(item => ({ name: item.name }))
   } catch (error) {
     ElMessage.error('加载目录失败')
   }

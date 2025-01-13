@@ -287,6 +287,7 @@ import ProgressBar from '@/components/common/ProgressBar.vue'
 import { formatDateTime } from '@/utils/format'
 import type { EmbyLibrary } from '@/types/api'
 import { Search, List, Grid } from '@element-plus/icons-vue'
+import type { TagProps } from 'element-plus'
 
 const embyStore = useEmbyStore()
 const loading = ref(false)
@@ -321,12 +322,11 @@ const totalItems = computed(() => {
 const lastUpdateTime = computed(() => {
   const times = libraries.value
     .map(lib => lib.lastUpdate)
-    .filter(Boolean) as string[]
+    .filter(Boolean)
   
-  if (times.length === 0) return '暂无更新'
+  if (times.length === 0) return 0
   
-  const latestTime = new Date(Math.max(...times.map(t => new Date(t).getTime())))
-  return formatDateTime(latestTime)
+  return Math.max(...times.map(t => new Date(t).getTime()))
 })
 
 // 方法
@@ -470,15 +470,13 @@ onUnmounted(() => {
 })
 
 // 添加媒体库类型处理方法
-const getLibraryTagType = (type: string) => {
-  const typeMap: Record<string, string> = {
-    'movies': 'success',
-    'tvshows': 'warning',
-    'music': 'info',
-    'photos': 'primary',
-    'default': ''
+const getLibraryTagType = (type: string): TagProps['type'] => {
+  switch (type) {
+    case 'movies': return 'success'
+    case 'tvshows': return 'warning'
+    case 'music': return 'info'
+    default: return 'primary'
   }
-  return typeMap[type.toLowerCase()] || typeMap.default
 }
 
 const getLibraryTypeName = (type: string) => {
@@ -544,6 +542,20 @@ const getProgressStatus = (progress: number) => {
   if (progress >= 100) return 'success'
   if (progress > 0) return ''
   return 'exception'
+}
+
+// 修复日期格式化
+const formatDateTime = (date: string | number | Date | undefined): string => {
+  if (!date) return '-'
+  return new Date(date).toLocaleString()
+}
+
+// 修复进度条组件
+interface ProgressBarProps {
+  percentage: number
+  status?: 'success' | 'warning' | 'exception'
+  title?: string
+  detail?: string
 }
 </script>
 

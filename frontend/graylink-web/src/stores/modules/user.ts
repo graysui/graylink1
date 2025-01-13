@@ -1,45 +1,43 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-
-interface LoginForm {
-  username: string
-  password: string
-}
+import type { UserState, LoginForm } from '../types'
+import { userApi } from '@/api/user'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(null)
-  const username = ref<string>('')
-  
-  // 默认管理员账户
-  const defaultUser = {
-    username: 'admin',
-    password: 'admin'
+  const username = ref('')
+  const userInfo = ref<UserState['userInfo']['value']>(null)
+
+  const hasToken = computed(() => !!token.value)
+  const hasRoles = (roles: string[]) => {
+    return userInfo.value?.roles.some(role => roles.includes(role)) ?? false
   }
 
-  // 登录功能
-  const login = async (loginForm: LoginForm) => {
-    if (loginForm.username === defaultUser.username && 
-        loginForm.password === defaultUser.password) {
-      token.value = 'admin-token'
-      username.value = defaultUser.username
-      return true
-    }
-    
-    throw new Error('用户名或密码错误')
+  const login = async (form: LoginForm) => {
+    const { data } = await userApi.login(form)
+    token.value = data.token
+    username.value = data.username
+    userInfo.value = data.userInfo
+  }
+
+  const register = async (form: LoginForm) => {
+    await userApi.register(form)
   }
 
   const logout = () => {
     token.value = null
     username.value = ''
+    userInfo.value = null
   }
-
-  const hasToken = computed(() => !!token.value)
 
   return {
     token,
     username,
+    userInfo,
+    hasToken,
+    hasRoles,
     login,
-    logout,
-    hasToken
+    register,
+    logout
   }
 }) 

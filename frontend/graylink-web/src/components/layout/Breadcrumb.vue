@@ -5,8 +5,8 @@
         <span
           v-if="index === breadcrumbs.length - 1"
           class="no-redirect"
-        >{{ item.meta.title }}</span>
-        <a v-else @click.prevent="handleLink(item)">{{ item.meta.title }}</a>
+        >{{ item.meta?.title }}</span>
+        <a v-else @click.prevent="handleLink(item)">{{ item.meta?.title }}</a>
       </el-breadcrumb-item>
     </transition-group>
   </el-breadcrumb>
@@ -14,43 +14,38 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useRoute, useRouter, type RouteLocationMatched } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
-
-const breadcrumbs = ref<RouteLocationMatched[]>([])
-
-const getBreadcrumb = () => {
-  let matched = route.matched.filter(item => item.meta && item.meta.title)
-  const first = matched[0]
-
-  if (!first || first.path !== '/') {
-    matched = [
-      {
-        path: '/',
-        meta: { title: '首页' }
-      } as RouteLocationMatched
-    ].concat(matched)
-  }
-
-  breadcrumbs.value = matched
-}
-
-const handleLink = (item: RouteLocationMatched) => {
-  const { redirect, path } = item
-  if (redirect) {
-    router.push(redirect.toString())
-    return
-  }
-  router.push(path)
-}
+const breadcrumbs = ref<RouteLocationNormalized[]>([])
 
 watch(
-  () => route.path,
-  () => getBreadcrumb(),
+  () => route.matched,
+  (matched) => {
+    breadcrumbs.value = matched.map(item => ({
+      ...item,
+      params: route.params,
+      query: route.query,
+      hash: route.hash,
+      fullPath: route.fullPath,
+      matched: route.matched
+    }))
+  },
   { immediate: true }
 )
+
+const handleLink = (item: RouteLocationNormalized) => {
+  const { path } = item
+  const redirect = item.meta?.redirect as string | undefined
+  
+  if (redirect) {
+    router.push({ path: redirect } as RouteLocationRaw)
+  } else {
+    router.push({ path } as RouteLocationRaw)
+  }
+}
 </script>
 
 <style lang="scss" scoped>
