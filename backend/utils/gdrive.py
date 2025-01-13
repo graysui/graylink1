@@ -1,3 +1,4 @@
+import logging
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -7,9 +8,12 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 import requests
 
+logger = logging.getLogger(__name__)
+
 SCOPES = [
-    'https://www.googleapis.com/auth/drive.activity.readonly',
-    'https://www.googleapis.com/auth/drive.metadata.readonly'
+    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/drive.metadata.readonly',
+    'https://www.googleapis.com/auth/drive.activity.readonly'
 ]
 
 class GoogleDriveAPI:
@@ -175,7 +179,7 @@ class GoogleDriveAPI:
             'https://oauth2.googleapis.com/device/code',
             data={
                 'client_id': self.client_id,
-                'scope': ' '.join(SCOPES)
+                'scope': 'https://www.googleapis.com/auth/drive.readonly'
             }
         )
         if response.status_code != 200:
@@ -205,9 +209,9 @@ class GoogleDriveAPI:
             'token_uri': "https://oauth2.googleapis.com/token",
             'client_id': self.client_id,
             'client_secret': self.client_secret,
-            'scopes': SCOPES
+            'scopes': ['https://www.googleapis.com/auth/drive.readonly']
         }
         os.makedirs(os.path.dirname(self.token_file), exist_ok=True)
         with open(self.token_file, 'w') as f:
             json.dump(token_info, f)
-        self.creds = Credentials.from_authorized_user_info(token_info, SCOPES) 
+        self.creds = Credentials.from_authorized_user_info(token_info) 

@@ -12,14 +12,6 @@
         <template #header>
           <div class="card-header">
             <span>监控设置</span>
-            <el-button
-              type="primary"
-              size="small"
-              :loading="testingGDrive"
-              @click="handleTestGDrive"
-            >
-              测试 Google Drive
-            </el-button>
           </div>
         </template>
         
@@ -29,111 +21,123 @@
             :min="60"
             :max="3600"
             :step="60"
-          >
-            <template #suffix>秒</template>
-          </el-input-number>
-          <div class="form-item-tip">
-            系统每隔多长时间扫描一次目录，检查所有新增文件。建议设置在 1-10 分钟之间，间隔太长可能导致遗漏文件变化
-          </div>
+          />
+          <div class="form-item-tip">系统每隔多长时间扫描一次目录（单位：秒）</div>
         </el-form-item>
 
-        <el-divider>Drive Activity API 设置</el-divider>
+        <!-- Google Drive 配置 -->
+        <el-divider>Google Drive 配置</el-divider>
+        
+        <el-form-item label="启用监控" prop="monitor.google_drive.enabled">
+          <el-switch v-model="formData.monitor.google_drive.enabled" />
+        </el-form-item>
 
-        <el-alert
-          title="Drive Activity API 配置说明"
-          type="info"
-          :closable="false"
-          class="gdrive-info"
-        >
-          <p>授权步骤：</p>
-          <ol>
-            <li>在 <el-link href="https://console.cloud.google.com" target="_blank">Google Cloud Console</el-link> 创建项目</li>
-            <li>启用 Drive Activity API</li>
-            <li>创建 OAuth 2.0 凭据：
-              <ul>
-                <li>应用类型选择：TVs and Limited Input devices</li>
-                <li>不需要配置重定向 URI</li>
-              </ul>
-            </li>
-            <li>复制 Client ID 和 Client Secret 填入下方</li>
-            <li>点击"授权"按钮，将显示设备码</li>
-            <li>使用任意设备访问 Google 授权页面并输入设备码</li>
-          </ol>
+        <template v-if="formData.monitor.google_drive.enabled">
           <el-alert
-            type="warning"
+            title="Drive Activity API 配置说明"
+            type="info"
             :closable="false"
-            style="margin-top: 10px"
+            class="gdrive-info"
           >
-            注意：
-            <ul>
-              <li>授权时请使用可以访问目标 Google Drive 文件夹的账号</li>
-              <li>设备码授权方式适用于远程服务器环境</li>
-            </ul>
+            <p>配置步骤：</p>
+            <ol>
+              <li>在 Emby 管理后台 -> 高级 -> API 密钥中生成新的 API Key</li>
+              <li>确保 Emby 服务器可以访问到媒体文件目录</li>
+              <li>媒体库路径应与 Emby 服务器中配置的媒体库路径一致</li>
+            </ol>
           </el-alert>
-        </el-alert>
 
-        <el-form-item label="Client ID" prop="monitor.google_drive.client_id">
-          <el-input
-            v-model="formData.monitor.google_drive.client_id"
-            placeholder="请输入 Drive Activity API Client ID"
-          />
-        </el-form-item>
+          <el-form-item label="Client ID" prop="monitor.google_drive.client_id">
+            <el-input
+              v-model="formData.monitor.google_drive.client_id"
+              placeholder="请输入 Drive Activity API Client ID"
+            />
+          </el-form-item>
 
-        <el-form-item label="Client Secret" prop="monitor.google_drive.client_secret">
-          <el-input
-            v-model="formData.monitor.google_drive.client_secret"
-            type="password"
-            show-password
-            placeholder="请输入 Drive Activity API Client Secret"
-          />
-        </el-form-item>
+          <el-form-item label="Client Secret" prop="monitor.google_drive.client_secret">
+            <el-input
+              v-model="formData.monitor.google_drive.client_secret"
+              type="password"
+              show-password
+              placeholder="请输入 Drive Activity API Client Secret"
+            />
+          </el-form-item>
 
-        <el-form-item label="Token 状态">
-          <div class="token-status">
-            <el-tag 
-              :type="formData.monitor.google_drive.refresh_token ? 'success' : 'info'"
-              size="small"
-            >
-              {{ formData.monitor.google_drive.refresh_token ? '已授权' : '未授权' }}
-            </el-tag>
-            <span class="token-path">
-              Token 文件路径: config/gdrive_token.json
-            </span>
-            <el-button 
-              type="primary" 
-              link
-              @click="handleAuthGDrive"
-            >
-              {{ formData.monitor.google_drive.refresh_token ? '重新授权' : '开始授权' }}
-            </el-button>
-          </div>
-        </el-form-item>
-
-        <el-form-item label="监控文件夹" prop="monitor.google_drive.watch_folder_id">
-          <el-input
-            v-model="formData.monitor.google_drive.watch_folder_id"
-            placeholder="请输入要监控的 Google Drive 文件夹 ID"
-          >
-            <template #append>
-              <el-button @click="handleCheckActivities">
-                检查活动
+          <el-form-item label="Token 状态">
+            <div class="token-status">
+              <el-tag 
+                :type="formData.monitor.google_drive.refresh_token ? 'success' : 'info'"
+                size="small"
+              >
+                {{ formData.monitor.google_drive.refresh_token ? '已授权' : '未授权' }}
+              </el-tag>
+              <span class="token-path">
+                Token 文件路径: {{ formData.monitor.google_drive.token_file }}
+              </span>
+              <el-button 
+                type="primary" 
+                link
+                @click="handleAuthGDrive"
+              >
+                {{ formData.monitor.google_drive.refresh_token ? '重新授权' : '开始授权' }}
               </el-button>
-            </template>
-          </el-input>
-          <div class="form-item-tip">
-            在 Google Drive 中打开目标文件夹，从 URL 中获取文件夹 ID
-          </div>
-        </el-form-item>
+            </div>
+          </el-form-item>
 
-        <el-form-item label="检查间隔" prop="monitor.google_drive.check_interval">
-          <el-select v-model="formData.monitor.google_drive.check_interval">
-            <el-option label="1小时" value="1h" />
-            <el-option label="6小时" value="6h" />
-            <el-option label="12小时" value="12h" />
-            <el-option label="1天" value="1d" />
-            <el-option label="7天" value="7d" />
-          </el-select>
-        </el-form-item>
+          <el-form-item label="监控文件夹" prop="monitor.google_drive.watch_folder_id">
+            <el-input
+              v-model="formData.monitor.google_drive.watch_folder_id"
+              placeholder="请输入要监控的 Google Drive 文件夹 ID"
+            >
+              <template #append>
+                <el-button @click="handleCheckActivities">
+                  检查活动
+                </el-button>
+              </template>
+            </el-input>
+            <div class="form-item-tip">
+              在 Google Drive 中打开目标文件夹，从 URL 中获取文件夹 ID
+            </div>
+          </el-form-item>
+
+          <el-form-item label="检查间隔" prop="monitor.google_drive.check_interval">
+            <el-select v-model="formData.monitor.google_drive.check_interval">
+              <el-option label="1小时" value="1h" />
+              <el-option label="6小时" value="6h" />
+              <el-option label="12小时" value="12h" />
+              <el-option label="1天" value="1d" />
+              <el-option label="7天" value="7d" />
+            </el-select>
+            <div class="form-item-tip">
+              系统会按此间隔定期检查 Drive Activity API 的文件变更
+            </div>
+          </el-form-item>
+
+          <el-form-item label="路径映射" prop="monitor.google_drive.path_mapping">
+            <el-input
+              type="textarea"
+              v-model="pathMappingText"
+              :rows="4"
+              placeholder="/GoogleDrive/电影=/mnt/media/movies
+/GoogleDrive/剧集=/mnt/media/tv"
+              @change="handlePathMappingChange"
+            />
+            <div class="form-item-tip">
+              <p>路径映射用于将 Google Drive 路径转换为本地路径，每行一个映射规则，格式：</p>
+              <ul>
+                <li>Drive路径=本地路径</li>
+                <li>例如：/GoogleDrive/电影=/mnt/media/movies</li>
+              </ul>
+              <p>说明：</p>
+              <ul>
+                <li>当 Drive 中有新文件时，系统会根据文件路径匹配相应的映射规则</li>
+                <li>匹配成功后，将在对应的本地路径创建软链接</li>
+                <li>例如：/GoogleDrive/电影/Avatar.mp4 会创建为 /mnt/media/movies/Avatar.mp4</li>
+                <li>保持原有的目录结构，便于媒体库管理</li>
+              </ul>
+            </div>
+          </el-form-item>
+        </template>
       </el-card>
 
       <!-- Emby设置 -->
@@ -141,8 +145,8 @@
         <template #header>
           <div class="card-header">
             <span>Emby 设置</span>
-            <el-button
-              type="primary"
+            <el-button 
+              type="primary" 
               size="small"
               :loading="testingEmby"
               @click="handleTestEmby"
@@ -167,79 +171,81 @@
         </el-alert>
 
         <el-form-item label="服务器地址" prop="emby.server_url">
-          <el-input
-            v-model="formData.emby.server_url"
-            placeholder="http://localhost:8096"
-          />
-          <div class="form-item-tip">
-            Emby 服务器的访问地址，确保系统可以访问此地址
-          </div>
+          <el-input v-model="formData.emby.server_url" />
+          <div class="form-item-tip">例如：http://localhost:8096</div>
         </el-form-item>
 
         <el-form-item label="API Key" prop="emby.api_key">
-          <el-input
-            v-model="formData.emby.api_key"
-            type="password"
-            show-password
-            placeholder="请输入 API Key"
-          />
-          <div class="form-item-tip">
-            在 Emby 管理后台 -> 高级 -> API 密钥中生成
-          </div>
-        </el-form-item>
-
-        <el-form-item label="媒体库路径" prop="emby.library_path">
-          <el-input
-            v-model="formData.emby.library_path"
-            placeholder="/mnt/media/movies"
-          />
-          <div class="form-item-tip">
-            Emby 服务器中配置的媒体库根目录，用于确定需要刷新的媒体库。此路径应该与 Emby 服务器中配置的路径完全一致，否则可能导致刷新失败
-          </div>
+          <el-input v-model="formData.emby.api_key" show-password />
         </el-form-item>
 
         <el-form-item label="自动刷新" prop="emby.auto_refresh">
           <el-switch v-model="formData.emby.auto_refresh" />
-          <div class="form-item-tip">
-            文件变更后自动刷新对应的 Emby 媒体库
-          </div>
         </el-form-item>
 
-        <el-form-item label="启动时刷新" prop="emby.refresh_on_startup">
-          <el-switch v-model="formData.emby.refresh_on_startup" />
-          <div class="form-item-tip">
-            系统启动时自动刷新所有媒体库
-          </div>
-        </el-form-item>
-
-        <el-form-item label="定时刷新" prop="emby.refresh_interval">
-          <el-input-number
-            v-model="formData.emby.refresh_interval"
-            :min="0"
-            :max="24"
-            :step="1"
-          >
-            <template #suffix>小时</template>
-          </el-input-number>
-          <div class="form-item-tip">
-            定期刷新媒体库的时间间隔，设置为 0 表示禁用定时刷新
-          </div>
+        <el-form-item label="媒体库路径" prop="emby.library_path">
+          <path-selector v-model="formData.emby.library_path" />
         </el-form-item>
       </el-card>
 
-      <!-- 账户设置 -->
+      <!-- Web UI账户设置 -->
       <el-card class="setting-card">
         <template #header>
           <div class="card-header">
-            <span>账户设置</span>
+            <span>Web UI账户设置</span>
           </div>
         </template>
 
-        <el-form-item label="修改密码">
+        <el-alert
+          title="账户设置说明"
+          type="info"
+          :closable="false"
+          class="account-info"
+        >
+          <p>修改Web界面的登录账户信息：</p>
+          <ol>
+            <li>默认用户名：admin</li>
+            <li>默认密码：admin</li>
+            <li>建议首次登录后修改默认密码</li>
+          </ol>
+        </el-alert>
+
+        <el-form-item label="账户名称" prop="account.username">
+          <el-input 
+            v-model="formData.account.username"
+            placeholder="请输入新的账户名称"
+          />
+        </el-form-item>
+
+        <el-divider>修改密码</el-divider>
+
+        <el-form-item label="新密码" prop="account.password">
+          <el-input
+            v-model="formData.account.password"
+            type="password"
+            show-password
+            placeholder="输入新密码，不修改请留空"
+          />
+          <div class="form-item-tip">
+            密码长度至少6位，不修改密码请留空
+          </div>
+        </el-form-item>
+
+        <el-form-item label="确认密码" prop="account.confirm_password">
+          <el-input
+            v-model="formData.account.confirm_password"
+            type="password"
+            show-password
+            placeholder="再次输入新密码"
+          />
+        </el-form-item>
+
+        <el-form-item>
           <el-button 
-            type="primary" 
+            type="primary"
             :loading="changingPassword"
-            @click="handleChangePassword"
+            @click="handleUpdatePassword"
+            :disabled="!formData.account.password"
           >
             修改密码
           </el-button>
@@ -335,7 +341,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { gdriveApi } from '@/api/gdrive'
@@ -385,6 +391,12 @@ const formData = reactive<SystemSettings>({
     conflict_strategy: 'skip',
     preserve_structure: true,
     backup_on_conflict: false
+  },
+  account: {
+    username: 'admin',
+    email: '',
+    password: '',
+    confirm_password: ''
   }
 })
 
@@ -418,6 +430,25 @@ const rules = reactive<FormRules>({
   ],
   'symlink.target_dir': [
     { required: true, message: '请选择目标目录', trigger: 'blur' }
+  ],
+  'account.username': [
+    { required: true, message: '请输入账户名称', trigger: 'blur' },
+    { min: 3, message: '账户名称至少3个字符', trigger: 'blur' }
+  ],
+  'account.password': [
+    { min: 6, message: '密码长度至少6位', trigger: 'blur' }
+  ],
+  'account.confirm_password': [
+    {
+      validator: (rule, value, callback) => {
+        if (formData.account.password && value !== formData.account.password) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
   ]
 })
 
@@ -434,17 +465,61 @@ const loadSettings = async () => {
   }
 }
 
-// 保存设置
+// 添加密码修改状态
+const changingPassword = ref(false)
+
+// 添加密码修改方法
+const handleUpdatePassword = async () => {
+  if (!formRef.value) return
+  
+  try {
+    // 验证密码字段
+    await formRef.value.validateField(['account.password', 'account.confirm_password'])
+    
+    changingPassword.value = true
+    
+    // 调用修改密码 API
+    await userApi.changePassword({
+      new_password: formData.account.password!
+    })
+    
+    ElMessage.success('密码修改成功')
+    
+    // 清空密码字段
+    formData.account.password = ''
+    formData.account.confirm_password = ''
+  } catch (error) {
+    if (error instanceof Error) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error('密码修改失败')
+    }
+  } finally {
+    changingPassword.value = false
+  }
+}
+
+// 修改保存设置方法，不再处理密码
 const submitForm = async () => {
   if (!formRef.value) return
   
   try {
     await formRef.value.validate()
     saving.value = true
-    await settingApi.updateSettings(formData)
+    
+    // 创建要提交的数据副本，移除密码字段
+    const submitData = { ...formData }
+    delete submitData.account.password
+    delete submitData.account.confirm_password
+    
+    await settingApi.updateSettings(submitData)
     ElMessage.success('保存成功')
   } catch (error) {
-    ElMessage.error('保存失败')
+    if (error instanceof Error) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error('保存失败')
+    }
   } finally {
     saving.value = false
   }
@@ -470,15 +545,71 @@ const handleTestGDrive = async () => {
   }
 }
 
-// 处理 Google Drive 授权
+// 授权状态
+const authorizing = ref(false)
+const authTimer = ref<number>()
+const authDialogVisible = ref(false)
+const authInfo = reactive({
+  user_code: '',
+  verification_url: '',
+  device_code: '',
+  expires_in: 0
+})
+
+// 处理授权
 const handleAuthGDrive = async () => {
   try {
-    const { data } = await gdriveApi.getAuthUrl()
-    window.open(data.auth_url, '_blank')
+    authorizing.value = true
+    
+    // 开始设备授权流程
+    const { data } = await gdriveApi.startAuth()
+    Object.assign(authInfo, data)
+    
+    // 显示授权对话框
+    authDialogVisible.value = true
+    
+    // 开始轮询检查授权状态
+    pollAuthStatus()
   } catch (error) {
-    ElMessage.error('获取授权链接失败')
+    ElMessage.error('启动授权失败')
+  } finally {
+    authorizing.value = false
   }
 }
+
+// 轮询检查授权状态
+const pollAuthStatus = () => {
+  authTimer.value = window.setInterval(async () => {
+    try {
+      const { data } = await gdriveApi.checkAuth(authInfo.device_code)
+      if (data.status === 'success') {
+        // 授权成功
+        clearInterval(authTimer.value)
+        authDialogVisible.value = false
+        ElMessage.success('授权成功')
+        
+        // 重新加载设置
+        await loadSettings()
+      }
+    } catch (error) {
+      console.error('检查授权状态失败:', error)
+    }
+  }, 5000) // 每5秒检查一次
+}
+
+// 关闭授权对话框时清理定时器
+const handleAuthDialogClose = () => {
+  if (authTimer.value) {
+    clearInterval(authTimer.value)
+  }
+}
+
+// 在组件卸载时清理
+onUnmounted(() => {
+  if (authTimer.value) {
+    clearInterval(authTimer.value)
+  }
+})
 
 // 检查 Drive 活动
 const handleCheckActivities = async () => {
@@ -504,50 +635,42 @@ const handleTestEmby = async () => {
   }
 }
 
-// 添加密码修改对话框
-const passwordDialogVisible = ref(false)
-const passwordForm = reactive({
-  old_password: '',
-  new_password: '',
-  confirm_password: ''
-})
-const passwordRules = reactive<FormRules>({
-  'old_password': [
-    { required: true, message: '请输入当前密码', trigger: 'blur' }
-  ],
-  'new_password': [
-    { required: true, message: '请输入新密码', trigger: 'blur' }
-  ],
-  'confirm_password': [
-    { required: true, message: '请再次输入新密码', trigger: 'blur' }
-  ]
-})
-const changingPassword = ref(false)
-const handleChangePassword = () => {
-  passwordDialogVisible.value = true
-}
-const submitPasswordChange = async () => {
-  try {
-    changingPassword.value = true
-    await userApi.changePassword({
-      old_password: passwordForm.old_password,
-      new_password: passwordForm.new_password
-    })
-    ElMessage.success('密码修改成功')
-    passwordDialogVisible.value = false
-  } catch (error) {
-    ElMessage.error('密码修改失败')
-  } finally {
-    changingPassword.value = false
-  }
-}
-
 // 加载初始数据
 onMounted(() => {
   loadSettings()
 })
+
+// 路径映射文本
+const pathMappingText = ref('')
+
+// 初始化时将对象转换为文本
+watch(() => formData.monitor.google_drive.path_mapping, (mapping) => {
+  pathMappingText.value = Object.entries(mapping)
+    .map(([drive, local]) => `${drive}=${local}`)
+    .join('\n')
+}, { immediate: true })
+
+// 处理路径映射变化
+const handlePathMappingChange = (value: string) => {
+  const mapping: Record<string, string> = {}
+  value.split('\n').forEach(line => {
+    const [drive, local] = line.trim().split('=')
+    if (drive && local) {
+      mapping[drive.trim()] = local.trim()
+    }
+  })
+  formData.monitor.google_drive.path_mapping = mapping
+}
 </script>
 
 <style scoped lang="scss">
-// ... 样式保持不变 ...
+.path-mapping-item {
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 </style>

@@ -7,6 +7,12 @@ export interface MonitorStatus {
   stats: {
     new_files: number
     processed_files: number
+    error_count: number
+    last_error?: string
+  }
+  config: {
+    watch_paths: string[]
+    excluded_paths: string[]
   }
 }
 

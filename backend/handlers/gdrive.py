@@ -1,8 +1,12 @@
+import logging
 from fastapi import APIRouter, HTTPException, Request
 from utils.gdrive import GoogleDriveAPI
 from utils.config import get_config
 from typing import Dict, Optional
 from fastapi.responses import HTMLResponse
+from utils.symlink import create_symlink
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -82,11 +86,10 @@ async def handle_gdrive_change(request: Request):
                 file_path = change['file']['path']
                 
                 # 转换为本地路径
-                local_path = None
-                for gdrive_path, local_dir in config.monitor.google_drive.path_mapping.items():
-                    if file_path.startswith(gdrive_path):
-                        local_path = file_path.replace(gdrive_path, local_dir)
-                        break
+                local_path = map_to_local_path(
+                    file_path,
+                    config.monitor.google_drive.path_mapping
+                )
                 
                 if local_path:
                     # 创建软链接
@@ -177,7 +180,7 @@ async def oauth2callback(code: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/gdrive/start-auth")
-async def start_device_auth() -> Dict[str, str]:
+async def start_device_auth():
     """开始设备授权流程"""
     try:
         config = get_config()
@@ -194,6 +197,8 @@ async def start_device_auth() -> Dict[str, str]:
             "device_code": device_code_info['device_code'],
             "expires_in": device_code_info['expires_in']
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/gdrive/check-auth")
 async def check_device_auth(device_code: str):

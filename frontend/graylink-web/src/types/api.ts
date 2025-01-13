@@ -142,6 +142,16 @@ export interface SystemSettings {
     interval: number
     batch_size: number
     max_retries: number
+    google_drive: {
+      enabled: boolean
+      client_id: string
+      client_secret: string
+      token_file: string
+      watch_folder_id: string
+      check_interval: string
+      path_mapping: Record<string, string>
+      refresh_token?: string
+    }
   }
   symlink: {
     source_dir: string
@@ -165,6 +175,12 @@ export interface SystemSettings {
       require_special: boolean
       require_numbers: boolean
     }
+  }
+  account: {
+    username: string
+    email: string
+    password?: string
+    confirm_password?: string
   }
 }
 
@@ -222,4 +238,37 @@ export interface MonitorConfig {
   max_retries: number
   google_drive: GoogleDriveConfig
   rclone: RcloneConfig
+}
+
+export interface UserInfo {
+  username: string
+  email: string
+}
+
+export interface ChangePasswordParams {
+  new_password: string
+}
+
+// 添加 Google Drive 相关类型定义
+export interface DriveActivity {
+  action_type: 'create' | 'edit' | 'move'
+  time: string
+  file: {
+    id: string
+    title: string
+    path: string
+    mime_type: string
+  }
+}
+
+export interface DriveMonitorStatus {
+  enabled: boolean
+  check_interval: string
+  last_check: string | null
+  folder_name: string
+  stats: {
+    total_activities: number
+    processed_files: number
+    error_count: number
+  }
 } 
