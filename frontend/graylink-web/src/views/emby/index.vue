@@ -49,18 +49,19 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { ProgressBarProps } from 'element-plus'
+import type { ProgressProps } from 'element-plus'
 import { useEmbyStore } from '@/stores/modules/emby'
-import type { EmbyLibrary, EmbyStatus } from '@/types/api'
+import type { EmbyLibrary, EmbyStatus } from '@/types/emby'
 
 const embyStore = useEmbyStore()
 
 // 修复状态定义
 const serverStatus = ref<EmbyStatus>({
-  connected: false,
-  version: '',
-  lastUpdate: '',
+  serverStatus: 'disconnected',
   apiStatus: false,
+  version: undefined,
+  lastCheck: undefined,
+  lastUpdate: undefined
 })
 
 // 删除重复声明，使用computed
@@ -70,9 +71,8 @@ const libraryList = computed(() => embyStore.libraries)
 const currentLibrary = ref<EmbyLibrary | null>(null)
 
 // 刷新进度状态
-const getProgressStatus = (progress: number) => {
-  if (progress < 100) return 'active'
-  return 'success'
+const getProgressStatus = (progress: number): ProgressProps['status'] => {
+  return progress >= 100 ? 'success' : 'warning'
 }
 
 // 格式化时间
@@ -88,9 +88,11 @@ const totalItems = computed(() => {
 
 // 获取最后更新时间
 const lastUpdateTime = computed(() => {
-  const times = libraryList.value.map((lib) => lib.lastUpdate).filter(Boolean)
+  const times = libraryList.value
+    .map((lib) => lib.lastUpdate)
+    .filter((t): t is string => t !== undefined)
   if (!times.length) return '未知'
-  return formatDateTime(Math.max(...times.map((t) => new Date(t).getTime())).toString())
+  return formatDateTime(new Date(Math.max(...times.map(t => new Date(t).getTime()))).toISOString())
 })
 
 // 刷新指定库
@@ -113,12 +115,7 @@ const refreshAllLibraries = async () => {
 
 // 更新服务器状态
 const updateServerStatus = (newStatus: EmbyStatus) => {
-  serverStatus.value = {
-    connected: newStatus.connected,
-    version: newStatus.version,
-    lastUpdate: newStatus.lastUpdate,
-    apiStatus: newStatus.apiStatus,
-  }
+  serverStatus.value = newStatus
 }
 
 // 初始化

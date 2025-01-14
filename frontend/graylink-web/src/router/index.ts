@@ -2,7 +2,24 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { Router, RouteRecordRaw, RouteLocationRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
-  // ... 你的路由配置
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/index.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/file',
+    name: 'File',
+    component: () => import('@/views/file/index.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/emby',
+    name: 'Emby',
+    component: () => import('@/views/emby/index.vue'),
+    meta: { requiresAuth: true }
+  }
 ]
 
 const router = createRouter({

@@ -122,15 +122,23 @@ class GoogleDriveAPI:
             return None
             
         drive_item = target['driveItem']
+        file_id = drive_item.get('name', '').split('/')[-1]
+        
+        # 获取actor信息
+        actor_email = None
+        if activity.get('actors'):
+            actor = activity['actors'][0]
+            if 'user' in actor:
+                actor_email = actor['user'].get('knownUser', {}).get('personName')
+        
         return {
-            'action_type': next(iter(action.keys())),
+            'id': file_id,
             'time': activity['timestamp'],
-            'file': {
-                'id': drive_item.get('name', '').split('/')[-1],
-                'title': drive_item.get('title', ''),
-                'mime_type': drive_item.get('mimeType', '')
-            }
-        } 
+            'type': next(iter(action.keys())),
+            'actorEmail': actor_email,
+            'targetName': drive_item.get('title', ''),
+            'targetId': file_id
+        }
 
     def get_auth_url(self) -> str:
         """获取授权URL"""

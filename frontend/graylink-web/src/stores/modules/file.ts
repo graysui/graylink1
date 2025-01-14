@@ -1,106 +1,74 @@
 import { defineStore } from 'pinia'
-import { api } from '@/api'
-import type { ApiResponse } from '@/api'
+import { ref } from 'vue'
+import type { FileItem, FileOperations } from '@/types/file'
+import { fileApi } from '@/api/file'
 
-interface FileInfo {
-  name: string
-  path: string
-  size: number
-  type: 'file' | 'directory'
-  modified: string
-  children?: FileInfo[]
-}
+export const useFileStore = defineStore('file', () => {
+  const currentPath = ref('')
+  const files = ref<FileItem[]>([])
+  const selectedFiles = ref<string[]>([])
+  const sortBy = ref('name')
+  const sortDesc = ref(false)
+  const loading = ref(false)
 
-interface FileStats {
-  total_size: number
-  file_count: number
-  dir_count: number
-  last_scan: string
-}
+  async function loadFiles(path: string) {
+    loading.value = true
+    try {
+      const response = await fileApi.getFiles(path)
+      files.value = response.data.items
+      currentPath.value = path
+    } finally {
+      loading.value = false
+    }
+  }
 
-interface FileState {
-  files: FileInfo[]
-  stats: FileStats | null
-  loading: boolean
-  currentPath: string
-}
+  async function loadDirectoryTree() {
+    try {
+      const response = await fileApi.getDirectoryTree()
+      return response.data.tree
+    } catch (error) {
+      console.error('Failed to load directory tree:', error)
+      return []
+    }
+  }
 
-export const useFileStore = defineStore('file', {
-  state: (): FileState => ({
-    files: [],
-    stats: null,
-    loading: false,
-    currentPath: '/',
-  }),
+  function setSorting(by: string, desc: boolean) {
+    sortBy.value = by
+    sortDesc.value = desc
+    files.value.sort((a, b) => {
+      const aValue = a[by as keyof FileItem]
+      const bValue = b[by as keyof FileItem]
 
-  actions: {
-    async getSnapshot(path = '/') {
-      this.loading = true
-      try {
-        const response = await api.get<ApiResponse<FileInfo[]>>('/files', {
-          params: { path },
-        })
-        this.files = response.data
-        this.currentPath = path
-      } finally {
-        this.loading = false
-      }
-    },
+      if (aValue === undefined && bValue === undefined) return 0
+      if (aValue === undefined) return desc ? 1 : -1
+      if (bValue === undefined) return desc ? -1 : 1
 
-    async moveFiles(paths: string[], target: string) {
-      this.loading = true
-      try {
-        await api.post('/files/move', {
-          paths,
-          target,
-        })
-        await this.getSnapshot(this.currentPath)
-      } finally {
-        this.loading = false
-      }
-    },
+      return desc
+        ? String(bValue).localeCompare(String(aValue))
+        : String(aValue).localeCompare(String(bValue))
+    })
+  }
 
-    async copyFiles(paths: string[], target: string) {
-      this.loading = true
-      try {
-        await api.post('/files/copy', {
-          paths,
-          target,
-        })
-        await this.getSnapshot(this.currentPath)
-      } finally {
-        this.loading = false
-      }
-    },
+  async function batchOperation(operation: FileOperations, paths: string[], targetPath?: string) {
+    loading.value = true
+    try {
+      await fileApi.batchOperation({ operation, paths, targetPath })
+      await loadFiles(currentPath.value)
+    } finally {
+      loading.value = false
+    }
+  }
 
-    async deleteFiles(paths: string[]) {
-      this.loading = true
-      try {
-        await api.post('/files/delete', { paths })
-        await this.getSnapshot(this.currentPath)
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async getStats() {
-      this.loading = true
-      try {
-        const response = await api.get<ApiResponse<FileStats>>('/files/stats')
-        this.stats = response.data
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async cleanup() {
-      this.loading = true
-      try {
-        await api.post('/files/cleanup')
-        await this.getStats()
-      } finally {
-        this.loading = false
-      }
-    },
-  },
+  return {
+    currentPath,
+    files,
+    selectedFiles,
+    sortBy,
+    sortDesc,
+    loading,
+    loadFiles,
+    setSorting,
+    batchOperation,
+    loadDirectoryTree
+  }
 })

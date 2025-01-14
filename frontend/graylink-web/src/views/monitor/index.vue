@@ -19,8 +19,8 @@
         <el-timeline>
           <el-timeline-item
             v-for="log in logs"
-            :key="log.time"
-            :timestamp="formatTime(log.time)"
+            :key="log.timestamp"
+            :timestamp="formatTime(log.timestamp)"
             :type="getLogType(log.level)"
           >
             {{ log.message }}
@@ -39,21 +39,25 @@ import { monitorApi } from '@/api/monitor'
 import LocalMonitor from '@/components/monitor/LocalMonitor.vue'
 import DriveActivityMonitor from '@/components/monitor/DriveActivityMonitor.vue'
 import { useMonitorStore } from '@/stores/modules/monitor'
-import type { MonitorLog, MonitorStats } from '@/types/monitor'
+import type { LogData, MonitorState } from '@/types/monitor'
 
-interface LogData {
-  time: string
-  level: 'error' | 'warning' | 'info'
-  message: string
-}
-
-const logs = ref<MonitorLog[]>([])
+const logs = ref<LogData[]>([])
 const loading = ref(false)
-const stats = ref<MonitorStats>({
-  total: 0,
-  success: 0,
-  error: 0,
-  warning: 0,
+const autoRefresh = ref(false)
+const stats = ref<MonitorState>({
+  status: 'stopped',
+  last_check: null,
+  interval: 0,
+  stats: {
+    total_files: 0,
+    processed_files: 0,
+    pending_files: 0,
+    error_count: 0,
+    scan_speed: 0,
+    estimated_time: 0
+  },
+  logs: [],
+  loading: false
 })
 
 const monitorStore = useMonitorStore()
@@ -63,10 +67,11 @@ const loadLogs = async () => {
   try {
     loading.value = true
     const { data } = await monitorApi.getLogs({ limit: 100 })
-    logs.value = data.map((item: LogData) => ({
-      timestamp: new Date(item.time).getTime(),
+    logs.value = data.data.map((item: any) => ({
+      timestamp: item.timestamp,
       level: item.level,
       message: item.message,
+      time: new Date(item.timestamp).toISOString()
     }))
   } catch (error) {
     ElMessage.error('加载日志失败')
@@ -106,8 +111,8 @@ onUnmounted(() => {
   stopRefresh()
 })
 
-const getLogType = (level: MonitorLog['level']): 'primary' | 'warning' | 'danger' => {
-  const map: Record<MonitorLog['level'], 'primary' | 'warning' | 'danger'> = {
+const getLogType = (level: LogData['level']): 'primary' | 'warning' | 'danger' => {
+  const map: Record<LogData['level'], 'primary' | 'warning' | 'danger'> = {
     info: 'primary',
     warning: 'warning',
     error: 'danger',
@@ -117,9 +122,10 @@ const getLogType = (level: MonitorLog['level']): 'primary' | 'warning' | 'danger
 
 const handleDataUpdate = (data: LogData[]) => {
   logs.value = data.map((item) => ({
-    timestamp: new Date(item.time).getTime(),
+    timestamp: item.timestamp,
     level: item.level,
     message: item.message,
+    time: item.timestamp
   }))
 }
 

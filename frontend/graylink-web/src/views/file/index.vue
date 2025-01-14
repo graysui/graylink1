@@ -204,6 +204,7 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 import { useFileStore } from '@/stores/modules/file'
 import { formatFileSize, formatTime } from '@/utils/format'
 import type { FileInfo } from '@/types/api'
+import type { FileOperations } from '@/types/file'
 import FilePreview from '@/components/common/FilePreview.vue'
 import UploadDialog from './components/UploadDialog.vue'
 import MoveDialog from './components/MoveDialog.vue'
@@ -370,14 +371,14 @@ const CopyIcon = DocumentIcon
 const FolderFilledIcon = FolderAdd
 
 const loadFiles = async (path: string) => {
-  await fileStore.getSnapshot(path)
+  await fileStore.loadFiles(path)
 }
 
 const setSorting = (prop: string, order: string) => {
   fileStore.setSorting(prop, order === 'descending')
 }
 
-const batchOperation = async (operation: string, paths: string[]) => {
+const batchOperation = async (operation: FileOperations, paths: string[]) => {
   await fileStore.batchOperation(operation, paths)
 }
 </script>

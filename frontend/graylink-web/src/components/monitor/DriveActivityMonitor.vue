@@ -7,8 +7,8 @@
           <el-tag :type="status.enabled ? 'success' : 'info'" size="small">
             {{ status.enabled ? '已启用' : '已禁用' }}
           </el-tag>
-          <el-button 
-            type="primary" 
+          <el-button
+            type="primary"
             size="small"
             :loading="checking"
             :disabled="!status.enabled"
@@ -106,13 +106,14 @@ const recentActivities = ref<DriveActivity[]>([])
 const handleCheck = async () => {
   try {
     checking.value = true
-    const { data } = await gdriveApi.checkActivities()
+    const response = await gdriveApi.checkActivities()
+    const result = response.data.data
     ElMessage.success(
-      `检查完成，发现 ${data.activities} 个活动，处理了 ${data.processed} 个文件`
+      `检查完成，发现 ${result.activities} 个活动，处理了 ${result.processed} 个文件`
     )
     // 更新统计信息
-    stats.total_activities += data.activities
-    stats.processed_files += data.processed
+    stats.total_activities += result.activities
+    stats.processed_files += result.processed
     status.last_check = new Date().toISOString()
   } catch (error) {
     ElMessage.error('检查失败')
@@ -183,4 +184,4 @@ const formatActivity = (activity: DriveActivity) => {
     }
   }
 }
-</style> 
+</style>

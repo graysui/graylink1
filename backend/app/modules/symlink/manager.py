@@ -91,10 +91,11 @@ class SymlinkManager:
         except Exception as e:
             logger.error(f"Error cleaning up directories: {str(e)}")
 
-    async def verify_symlinks(self) -> Dict[str, List[str]]:
+    async def verify_symlinks(self) -> Dict[str, int]:
         """验证所有软链接的完整性"""
-        broken_links = []
-        invalid_targets = []
+        valid_count = 0
+        invalid_count = 0
+        missing_count = 0
         
         for root, _, files in os.walk(self.target_dir):
             for file in files:
@@ -102,13 +103,16 @@ class SymlinkManager:
                 if os.path.islink(full_path):
                     target = os.path.realpath(full_path)
                     if not os.path.exists(target):
-                        broken_links.append(full_path)
+                        missing_count += 1
                     elif not target.startswith(self.source_dir):
-                        invalid_targets.append(full_path)
+                        invalid_count += 1
+                    else:
+                        valid_count += 1
 
         return {
-            "broken_links": broken_links,
-            "invalid_targets": invalid_targets
+            "valid": valid_count,
+            "invalid": invalid_count,
+            "missing": missing_count
         }
 
     async def rebuild_symlinks(self, file_records: List[Dict]) -> Dict[str, int]:
@@ -117,18 +121,25 @@ class SymlinkManager:
             # 清理现有的软链接
             await self.clear_all_symlinks()
             
-            success_count = 0
-            error_count = 0
+            valid_count = 0
+            invalid_count = 0
+            missing_count = 0
             
             for record in file_records:
+                source_path = os.path.join(self.source_dir, record['path'])
+                if not os.path.exists(source_path):
+                    missing_count += 1
+                    continue
+                    
                 if await self.create_symlink(record['path']):
-                    success_count += 1
+                    valid_count += 1
                 else:
-                    error_count += 1
+                    invalid_count += 1
 
             return {
-                "success": success_count,
-                "error": error_count
+                "valid": valid_count,
+                "invalid": invalid_count,
+                "missing": missing_count
             }
 
         except Exception as e:

@@ -61,8 +61,10 @@ export const useSettingStore = defineStore('setting', {
         session_timeout: 3600,
         password_policy: {
           min_length: 8,
-          require_special: true,
+          require_uppercase: true,
+          require_lowercase: true,
           require_numbers: true,
+          require_special: true
         },
       },
       account: {
@@ -82,7 +84,9 @@ export const useSettingStore = defineStore('setting', {
       this.loading = true
       try {
         const response = await api.get<ApiResponse<SystemSettings>>('/settings')
-        this.settings = response.data
+        if (response.data && response.data.data) {
+          this.settings = response.data.data
+        }
       } finally {
         this.loading = false
       }

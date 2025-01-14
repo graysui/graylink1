@@ -310,22 +310,39 @@ const formRef = ref<FormInstance>()
 const loading = ref(false)
 const pathMappingText = ref('')
 
+// 添加确认密码验证函数
+const validateConfirmPassword = (rule: any, value: string, callback: any) => {
+  if (value === '') {
+    callback(new Error('请再次输入密码'))
+  } else if (value !== form.account.password) {
+    callback(new Error('两次输入密码不一致'))
+  } else {
+    callback()
+  }
+}
+
 // 表单验证规则
 const rules: FormRules = {
   'monitor.interval': [
     { required: true, message: '请输入监控间隔', trigger: 'blur' },
     { type: 'number', min: 1000, message: '间隔不能小于1秒', trigger: 'blur' },
   ],
-  'monitor.google_drive.client_id': [
-    { required: true, message: '请输入客户端ID', trigger: 'blur' },
+  'monitor.google_drive.client_id': [{ required: true, message: '请输入 Client ID', trigger: 'blur' }],
+  'monitor.google_drive.client_secret': [{ required: true, message: '请输入 Client Secret', trigger: 'blur' }],
+  'monitor.google_drive.watch_folder_id': [{ required: true, message: '请输入监控文件夹 ID', trigger: 'blur' }],
+  'emby.server_url': [{ required: true, message: '请输入服务器地址', trigger: 'blur' }],
+  'emby.api_key': [{ required: true, message: '请输入 API Key', trigger: 'blur' }],
+  'emby.library_path': [{ required: true, message: '请选择媒体库路径', trigger: 'blur' }],
+  'account.username': [{ required: true, message: '请输入账户名称', trigger: 'blur' }],
+  'account.password': [
+    { min: 6, message: '密码长度至少6位', trigger: 'blur' }
   ],
-  'monitor.google_drive.client_secret': [
-    { required: true, message: '请输入客户端密钥', trigger: 'blur' },
+  'account.confirm_password': [
+    { validator: validateConfirmPassword, trigger: 'blur' }
   ],
   'symlink.source_dir': [{ required: true, message: '请选择源目录', trigger: 'blur' }],
   'symlink.target_dir': [{ required: true, message: '请选择目标目录', trigger: 'blur' }],
-  'emby.host': [{ required: true, message: '请输入Emby服务器地址', trigger: 'blur' }],
-  'emby.api_key': [{ required: true, message: '请输入API密钥', trigger: 'blur' }],
+  'symlink.conflict_strategy': [{ required: true, message: '请选择冲突处理策略', trigger: 'blur' }]
 }
 
 // 表单数据
@@ -352,7 +369,8 @@ const form = reactive<SystemSettings>({
     rebuild_interval: 0,
     conflict_strategy: '',
     preserve_structure: false,
-    backup_on_conflict: false
+    backup_on_conflict: false,
+    path_mapping: {}
   },
   emby: {
     host: '',
@@ -365,7 +383,16 @@ const form = reactive<SystemSettings>({
   },
   security: {
     jwt_secret: '',
-    token_expire: 0
+    token_expire: 7200,
+    max_login_attempts: 5,
+    session_timeout: 30,
+    password_policy: {
+      min_length: 8,
+      require_uppercase: true,
+      require_lowercase: true,
+      require_numbers: true,
+      require_special: true
+    }
   },
   account: {
     allow_register: false,
@@ -395,17 +422,12 @@ const handleAuthGDrive = async () => {
 }
 
 const handleTestEmby = async () => {
-  if (!form.emby.host || !form.emby.api_key) {
-    ElMessage.warning('请先填写Emby服务器配置')
-    return
-  }
-
   testingEmby.value = true
   try {
     await settingStore.testEmbyConnection(form.emby)
     ElMessage.success('连接成功')
-  } catch (error) {
-    ElMessage.error('连接失败')
+  } catch (error: any) {
+    ElMessage.error(`连接失败: ${error.message}`)
   } finally {
     testingEmby.value = false
   }
@@ -419,7 +441,7 @@ const submitForm = async () => {
     saving.value = true
     await settingStore.saveSettings(form)
     ElMessage.success('保存成功')
-  } catch (error) {
+  } catch (error: any) {
     ElMessage.error('保存失败')
   } finally {
     saving.value = false
@@ -433,14 +455,20 @@ const resetForm = () => {
 }
 
 const handleUpdatePassword = async () => {
-  if (!form.account.password) return
+  if (!form.account.password || !form.account.confirm_password) {
+    ElMessage.warning('请输入新密码')
+    return
+  }
+  changingPassword.value = true
   try {
-    await settingStore.updatePassword('', form.account.password)
+    await settingStore.updatePassword(form.account.password, form.account.confirm_password)
+    ElMessage.success('密码修改成功')
     form.account.password = ''
     form.account.confirm_password = ''
-    ElMessage.success('密码更新成功')
-  } catch (error) {
-    ElMessage.error('密码更新失败')
+  } catch (error: any) {
+    ElMessage.error(`密码修改失败: ${error.message}`)
+  } finally {
+    changingPassword.value = false
   }
 }
 

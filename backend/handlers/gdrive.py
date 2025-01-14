@@ -113,7 +113,16 @@ async def check_activities():
     try:
         config = get_config()
         if not config.monitor.google_drive.enabled:
-            return {"status": "disabled"}
+            return {
+                "code": 200,
+                "data": {
+                    "activities": 0,
+                    "processed": 0,
+                    "items": []
+                },
+                "message": "监控已禁用",
+                "status": "disabled"
+            }
 
         gdrive = GoogleDriveAPI(
             client_id=config.monitor.google_drive.client_id,
@@ -129,27 +138,39 @@ async def check_activities():
         # 处理新文件活动
         processed = 0
         for activity in activities:
-            if activity['action_type'] in ['create', 'edit', 'move']:
-                drive_path = activity['file']['path']
-                # 转换为本地路径
-                local_path = map_to_local_path(
-                    drive_path,
-                    config.monitor.google_drive.path_mapping
-                )
-                if local_path:
-                    # 创建软链接
-                    from utils.symlink import create_symlink
-                    await create_symlink(local_path)
-                    processed += 1
+            if activity['type'] in ['create', 'edit', 'move']:
+                # 获取文件路径
+                file_path = gdrive.get_file_path(activity['targetId'])
+                if file_path:
+                    # 转换为本地路径
+                    local_path = map_to_local_path(
+                        file_path,
+                        config.monitor.google_drive.path_mapping
+                    )
+                    if local_path:
+                        # 创建软链接
+                        from utils.symlink import create_symlink
+                        await create_symlink(local_path)
+                        processed += 1
         
         return {
-            "status": "success", 
-            "activities": len(activities),
-            "processed": processed
+            "code": 200,
+            "data": {
+                "activities": len(activities),
+                "processed": processed,
+                "items": activities
+            },
+            "message": "检查完成",
+            "status": "success"
         }
     except Exception as e:
         logger.error(f"检查Drive活动失败: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "code": 500,
+            "data": None,
+            "message": str(e),
+            "status": "error"
+        }
 
 @router.get("/oauth2callback")
 async def oauth2callback(code: str):

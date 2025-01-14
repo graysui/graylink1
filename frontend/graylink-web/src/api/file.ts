@@ -1,17 +1,30 @@
-import request from '@/utils/request'
-import type { FileInfo, DatabaseStats } from '@/types/api'
+import type { FileItem, FileOperations, FileApiResponse, BatchOperationParams } from '@/types/file'
+import type { ApiResponse } from '@/types/response'
+import { request } from '@/utils/request'
 
 export const fileApi = {
-  getSnapshot: (path?: string) => request.get<FileInfo[]>('/files/snapshot', path ? { params: { path } } : undefined),
-  getStats: () => request.get<DatabaseStats>('/files/stats'),
-  cleanup: () => request.post('/files/cleanup'),
-  delete: (paths: string[]) => request.post('/files/delete', { paths }),
-  move: (paths: string[], target: string) => request.post('/files/move', { paths, target }),
-  copy: (paths: string[], target: string) => request.post('/files/copy', { paths, target }),
-  // 获取目录列表
-  listDirectory(path: string) {
-    return request.get<FileInfo[]>('/file/list', {
-      params: { path }
-    })
+  // 获取文件列表
+  getFiles(path: string): Promise<ApiResponse<FileApiResponse>> {
+    return request.get('/api/file/list', { params: { path } })
+  },
+
+  // 获取文件快照
+  getSnapshot(path: string): Promise<ApiResponse<FileItem[]>> {
+    return request.get('/api/monitor/snapshot', { params: { path } })
+  },
+
+  // 批量操作
+  batchOperation(params: BatchOperationParams): Promise<ApiResponse<void>> {
+    return request.post('/api/file/batch', params)
+  },
+
+  // 获取文件统计信息
+  getStats(): Promise<ApiResponse<{ total: number, size: number }>> {
+    return request.get('/api/file/stats')
+  },
+
+  // 获取目录树结构
+  getDirectoryTree(): Promise<ApiResponse<{ tree: FileItem[] }>> {
+    return request.get('/api/file/tree')
   }
-} 
+}

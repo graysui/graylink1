@@ -4,15 +4,19 @@ export interface LoginForm {
   remember?: boolean
 }
 
-export interface RegisterForm {
-  username: string
-  email: string
-  password: string
-  confirmPassword: string
-  agreeTerms: boolean
+export class AuthError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AuthError'
+  }
 }
 
-export interface AuthError {
-  field: keyof LoginForm | keyof RegisterForm
-  message: string
+export interface AuthState {
+  token: string | null
+  user: {
+    id: string
+    username: string
+    role: string
+  } | null
+  isAuthenticated: boolean
 }

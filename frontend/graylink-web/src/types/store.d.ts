@@ -1,14 +1,11 @@
 import type { SystemSettings } from './settings'
-import type { EmbyLibrary, EmbyStatus } from './settings'
+import type { EmbyLibrary, EmbyStatus, EmbyState } from './emby'
+import type { FileItem } from './settings'
+import type { VerifyResult } from './symlink'
 
 export interface SettingState {
   settings: SystemSettings
-}
-
-export interface EmbyState {
-  libraries: EmbyLibrary[]
-  status: EmbyStatus
-  refreshProgress: Record<string, number>
+  loading: boolean
 }
 
 export interface FileState {
@@ -29,14 +26,6 @@ export interface SymlinkState {
   }
 }
 
-export interface FileItem {
-  name: string
-  path: string
-  type: 'file' | 'directory'
-  size: number
-  modTime: string
-}
-
 // Store方法类型
 export interface SettingStore {
   getSettings(): Promise<void>
@@ -50,6 +39,7 @@ export interface EmbyStore {
   getLibraries(): Promise<void>
   refreshByPaths(paths: string[]): Promise<void>
   refreshRoot(): Promise<void>
+  updateRefreshProgress(libraryId: string, progress: number): void
 }
 
 export interface FileStore {
@@ -62,13 +52,4 @@ export interface FileStore {
   loadFiles(path: string): Promise<void>
   setSorting(prop: string, descending: boolean): void
   batchOperation(operation: string, paths: string[]): Promise<void>
-}
-
-export interface SymlinkStore {
-  verifySymlinks(): Promise<void>
-  createSymlink(sourcePath: string): Promise<void>
-  removeSymlink(targetPath: string): Promise<void>
-  rebuildSymlinks(): Promise<void>
-  clearSymlinks(): Promise<void>
-  updateProgress(current: number, total: number, message?: string): void
 }

@@ -1,70 +1,53 @@
 import { defineStore } from 'pinia'
-import { api } from '@/api'
-import type { ApiResponse } from '@/api'
-
-interface EmbyState {
-  status: {
-    connected: boolean
-    version: string
-    error?: string
-  }
-  libraries: Array<{
-    id: string
-    name: string
-    path: string
-    type: string
-  }>
-  loading: boolean
-}
+import { api } from '@/utils/request'
+import type { EmbyState, EmbyStatus, EmbyLibrary } from '@/types/emby'
+import type { ApiResponse } from '@/types/response'
 
 export const useEmbyStore = defineStore('emby', {
   state: (): EmbyState => ({
     status: {
-      connected: false,
-      version: '',
-      error: undefined,
+      serverStatus: 'disconnected',
+      apiStatus: false,
+      version: undefined,
+      lastCheck: undefined,
+      lastUpdate: undefined
     },
     libraries: [],
-    loading: false,
+    refreshProgress: {}
   }),
 
   actions: {
     async checkStatus() {
-      this.loading = true
       try {
-        const response = await api.get<ApiResponse<EmbyState['status']>>('/emby/status')
-        this.status = response.data
-      } finally {
-        this.loading = false
+        const response = await api.get<ApiResponse<EmbyStatus>>('/api/emby/status')
+        this.status = response.data.data
+      } catch (error) {
+        this.status.serverStatus = 'disconnected'
+        this.status.apiStatus = false
+        throw error
       }
     },
 
     async getLibraries() {
-      this.loading = true
       try {
-        const response = await api.get<ApiResponse<EmbyState['libraries']>>('/emby/libraries')
-        this.libraries = response.data
-      } finally {
-        this.loading = false
+        const response = await api.get<ApiResponse<EmbyLibrary[]>>('/api/emby/libraries')
+        this.libraries = response.data.data
+      } catch (error) {
+        this.libraries = []
+        throw error
       }
     },
 
     async refreshByPaths(paths: string[]) {
-      this.loading = true
-      try {
-        await api.post('/emby/refresh', { paths })
-      } finally {
-        this.loading = false
-      }
+      await api.post<ApiResponse<void>>('/api/emby/refresh', { paths })
     },
 
     async refreshRoot() {
-      this.loading = true
-      try {
-        await api.post('/emby/refresh')
-      } finally {
-        this.loading = false
-      }
+      await api.post<ApiResponse<void>>('/api/emby/refresh')
     },
-  },
+
+    updateRefreshProgress(libraryId: string, progress: number) {
+      this.refreshProgress[libraryId] = progress
+    }
+  }
 })

@@ -32,12 +32,12 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import type { RouteLocationRaw } from 'vue-router'
+import { useRouter, useRoute, type RouteLocationRaw } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/modules/user'
-import type { LoginForm, AuthError } from '@/types/auth'
+import type { LoginForm } from '@/types/auth'
+import { AuthError } from '@/types/auth'
 
 const loginFormRef = ref<FormInstance>()
 const loginForm = reactive<LoginForm>({
@@ -64,12 +64,12 @@ const handleLogin = async () => {
     await userStore.login(loginForm)
     ElMessage.success('登录成功')
     const redirect = (route.query.redirect as string) || '/'
-    router.push(redirect)
+    await router.push(redirect as RouteLocationRaw)
   } catch (error) {
     if (error instanceof AuthError) {
       ElMessage.error(error.message)
     } else {
-      ElMessage.error('登录失败，请重试')
+      ElMessage.error('登录失败')
     }
   } finally {
     loading.value = false

@@ -1,24 +1,46 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig } from 'axios'
-import type { ApiResponse } from '@/types/api'
+import type { AxiosRequestConfig, AxiosResponse } from 'axios'
+import type { ApiResponse } from '@/types/response'
+import { getToken } from '@/utils/auth'
 
-interface CustomAxiosRequestConfig extends AxiosRequestConfig {
-  withCredentials?: boolean
-}
-
-const service: AxiosInstance = axios.create({
+const api = axios.create({
   baseURL: '/api',
-  timeout: 15000,
-  withCredentials: true
-} as CustomAxiosRequestConfig)
+  timeout: 10000
+})
 
-service.interceptors.response.use(
-  <T>(response: { data: ApiResponse<T> }) => {
-    return response.data
+// 请求拦截器
+api.interceptors.request.use(
+  (config: AxiosRequestConfig) => {
+    const token = getToken()
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
   },
-  (error: any) => {
-    return Promise.reject(error)
-  }
+  (error: Error) => Promise.reject(error)
 )
 
-export default service 
+// 响应拦截器
+api.interceptors.response.use(
+  (response: AxiosResponse) => {
+    const apiResponse = response.data as ApiResponse<unknown>
+    if (apiResponse.code !== 0) {
+      throw new Error(apiResponse.message)
+    }
+    return apiResponse
+  },
+  (error: Error) => Promise.reject(error)
+)
+
+export const request = {
+  get: <T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> =>
+    api.get(url, config),
+  post: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> =>
+    api.post(url, data, config),
+  put: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> =>
+    api.put(url, data, config),
+  delete: <T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> =>
+    api.delete(url, config)
+}
+
+export { api }

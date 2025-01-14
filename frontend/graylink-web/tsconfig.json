@@ -16,9 +16,13 @@
       "@/*": ["./src/*"]
     },
     "lib": ["esnext", "dom", "dom.iterable", "scripthost"],
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ],
     "types": [
-      "element-plus/global",
-      "@element-plus/icons-vue"
+      "node",
+      "element-plus/global"
     ],
     "verbatimModuleSyntax": true
   },
@@ -26,7 +30,8 @@
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.tsx",
-    "src/**/*.vue"
+    "src/**/*.vue",
+    "types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules"

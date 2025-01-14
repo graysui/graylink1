@@ -1,28 +1,11 @@
-import request from '@/utils/request'
-import type { ApiResponse, MonitorStatus, ActivityResult } from '@/types/api'
+import { api } from '@/utils/request'
+import type { MonitorState } from '@/types/monitor'
 
 export const monitorApi = {
-  getStatus() {
-    return request.get<ApiResponse<MonitorStatus>>('/monitor/status')
-  },
-
-  start() {
-    return request.post<ApiResponse<void>>('/monitor/start')
-  },
-
-  stop() {
-    return request.post<ApiResponse<void>>('/monitor/stop')
-  },
-
-  getLogs(params: { limit: number }) {
-    return request.get<ApiResponse<string[]>>('/monitor/logs', { params })
-  },
-
-  clearLogs() {
-    return request.post<ApiResponse<void>>('/monitor/logs/clear')
-  },
-
-  checkActivities() {
-    return request.get<ApiResponse<ActivityResult>>('/monitor/check-activities')
-  }
-} 
+  getStatus: () => api.get<MonitorState>('/monitor/status'),
+  start: () => api.post('/monitor/start'),
+  stop: () => api.post('/monitor/stop'),
+  getLogs: (params?: any) => api.get('/monitor/logs', { params }),
+  clearLogs: () => api.post('/monitor/logs/clear'),
+  getStats: () => api.get('/monitor/stats')
+}

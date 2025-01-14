@@ -22,6 +22,7 @@ export interface SystemSettings {
     conflict_strategy?: string
     preserve_structure?: boolean
     backup_on_conflict?: boolean
+    path_mapping: Record<string, string>
   }
   emby: {
     host: string
@@ -30,11 +31,20 @@ export interface SystemSettings {
     refresh_delay: number
     path_mapping: Record<string, string>
     server_url?: string
-    library_path?: string
+    library_path: string
   }
   security: {
     jwt_secret: string
     token_expire: number
+    max_login_attempts: number
+    session_timeout: number
+    password_policy: {
+      min_length: number
+      require_uppercase: boolean
+      require_lowercase: boolean
+      require_numbers: boolean
+      require_special: boolean
+    }
   }
   account: {
     allow_register: boolean
@@ -42,5 +52,6 @@ export interface SystemSettings {
     username?: string
     password?: string
     confirm_password?: string
+    email?: string
   }
 }

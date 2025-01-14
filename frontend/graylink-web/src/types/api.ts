@@ -201,16 +201,8 @@ export interface SystemSettings {
   }
 }
 
-export interface VerifyResult {
-  broken_links: string[]
-  invalid_targets: string[]
-  timestamp?: string
-  stats?: {
-    total: number
-    broken: number
-    invalid: number
-  }
-}
+import type { VerifyResult } from './symlink'
+export type { VerifyResult }
 
 // 修改 SymlinkStore 的类型
 export interface SymlinkStore {
@@ -309,4 +301,4 @@ export interface MonitorLog {
   time: string
   level: 'error' | 'warning' | 'info'
   message: string
-} 
+}
