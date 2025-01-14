@@ -11,175 +11,85 @@ GrayLink 是一个高性能的 Google Drive 文件监控和软链接管理系统
 - 📺 支持 Emby 媒体库自动刷新
 - 🖥️ 友好的 Web 管理界面
 
-## 🏗️ 系统架构
+## 🏗️ 项目结构
 
-### 后端架构
+```
+graylink/
+├── frontend/                # 前端项目
+│   └── graylink-web/       # Vue 3 + TypeScript 项目
+│       ├── src/
+│       │   ├── api/        # API 接口定义
+│       │   ├── components/ # 通用组件
+│       │   ├── stores/     # Pinia 状态管理
+│       │   ├── types/      # TypeScript 类型定义
+│       │   ├── utils/      # 工具函数
+│       │   └── views/      # 页面组件
+│       └── ...
+└── backend/                # 后端项目
+    ├── app/               # 应用核心模块
+    ├── handlers/         # 请求处理器
+    ├── models/          # 数据模型
+    ├── schemas/         # 数据验证模式
+    └── utils/           # 工具函数
+```
 
-采用模块化设计，核心模块包括：
+## 🚀 技术栈
 
-#### 1. 监控模块 (Monitor)
-- 文件系统实时监控
-- Google Drive API 集成
-- 智能增量扫描
-- 事件驱动系统
-
-#### 2. 数据库模块 (Database)
-- SQLite 高性能存储
-- 文件索引管理
-- 目录结构快照生成
-
-#### 3. 软链接管理模块 (Symlink)
-- 智能软链接生成
-- 冲突检测与处理
-- 实时同步更新
-
-#### 4. Emby 集成模块 (Emby)
-- 媒体库自动管理
-- API 深度集成
-- 智能刷新机制
-
-#### 5. 系统模块
-- 日志记录与分析
-- 异常检测与处理
-- 配置管理中心
-
-### 前端架构
-
-基于现代化技术栈：
-- Vue.js 3.0 + TypeScript
-- Element Plus UI
+### 前端技术栈
+- Vue 3 + TypeScript
 - Pinia 状态管理
-- Axios 请求处理
+- Vue Router
+- Element Plus UI
+- Vite 构建工具
 
-## 🚀 快速开始
+### 后端技术栈
+- Python FastAPI
+- SQLite 数据库
+- Google Drive API
+- Emby API
 
-### 环境要求
-- Python 3.8+
-- Node.js 16+
-- SQLite 3
-- Docker & Docker Compose
+## 🛠️ 开发环境设置
 
-### Docker 部署
-
-```yaml
-version: '3'
-services:
-  graylink-backend:
-    build: ./backend
-    volumes:
-      - ./config:/app/config
-      - ./data:/app/data
-      - /path/to/gdrive:/gdrive:shared
-    environment:
-      - TZ=Asia/Shanghai
-    restart: unless-stopped
-
-  graylink-frontend:
-    build: ./frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - graylink-backend
-    restart: unless-stopped
-```
-
-### 手动部署
-
-1. 克隆项目
+### 前端开发
 ```bash
-git clone https://github.com/yourusername/graylink.git
-cd graylink
-```
-
-2. 后端配置
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: .\venv\Scripts\activate
-pip install -r requirements.txt
-cp config/config.example.yml config/config.yml
-# 编辑 config.yml 配置文件
-```
-
-3. 前端配置
-```bash
-cd frontend
+cd frontend/graylink-web
 npm install
-cp .env.example .env
-# 编辑 .env 配置文件
+npm run dev
 ```
 
-4. 启动服务
+### 后端开发
 ```bash
-# 后端
 cd backend
+pip install -r requirements.txt
 python main.py
+```
 
-# 前端
-cd frontend
-npm run dev  # 开发环境
-npm run build  # 生产环境
+## 🐳 Docker 部署
+
+使用 Docker Compose 一键部署：
+```bash
+docker-compose up -d
 ```
 
 ## 📝 配置说明
 
-### 核心配置项
+### 前端配置
+- `.env.development`: 开发环境配置
+- `.env.production`: 生产环境配置
 
-```yaml
-monitor:
-  scan_interval: 300  # 扫描间隔（秒）
-  google_drive:
-    client_id: "your_client_id"
-    client_secret: "your_client_secret"
-    
-symlink:
-  source_dir: "/gdrive/media"
-  target_dir: "/data/media"
-  
-emby:
-  host: "http://emby:8096"
-  api_key: "your_api_key"
-```
-
-## 🔒 安全性设计
-
-- API 认证与授权
-- 数据加密存储
-- 访问控制机制
-- 安全日志记录
-
-## 🎯 性能优化
-
-- 异步 IO 处理
-- 多线程任务处理
-- 增量扫描机制
-- 数据库索引优化
-- 智能缓存策略
-
-## 📖 文档
-
-详细文档请参考：
-- [安装指南](docs/installation.md)
-- [配置手册](docs/configuration.md)
-- [API 文档](docs/api.md)
-- [常见问题](docs/faq.md)
+### 后端配置
+- `config/`: 配置文件目录
+  - `app.yaml`: 应用配置
+  - `google.yaml`: Google Drive 配置
+  - `emby.yaml`: Emby 配置
 
 ## 🤝 贡献指南
 
-欢迎提交 Pull Request 和 Issue。在提交之前，请确保：
-
-1. 代码符合项目规范
-2. 添加必要的测试用例
-3. 更新相关文档
-4. 提供清晰的提交信息
+1. Fork 本仓库
+2. 创建特性分支
+3. 提交更改
+4. 发起 Pull Request
 
 ## 📄 许可证
 
-[MIT License](LICENSE)
-
-## 📮 联系方式
-
-- 项目维护者：[维护者姓名]
-- Email：[邮箱地址]
-- GitHub：[GitHub地址]
-- 问题反馈：[Issues](https://github.com/yourusername/graylink/issues)
+本项目采用 MIT 许可证

@@ -1,32 +1,15 @@
-version: '3.8'
+version: '3'
 
 services:
-  frontend:
-    build: 
-      context: ./frontend/graylink-web
-      dockerfile: Dockerfile
-      args:
-        - NODE_ENV=production
+  graylink:
+    build: .
     ports:
-      - "80:80"
+      - "8728:8728"
+      - "8000:8000"
     volumes:
-      - ./frontend/graylink-web/dist:/usr/share/nginx/html:ro
-    depends_on:
-      - backend
-    networks:
-      - graylink-network
-
-  backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+      - ./config:/app/backend/config
+      - ./data:/app/backend/data
+      - /path/to/gdrive:/gdrive:shared
     environment:
-      - NODE_ENV=production
-    networks:
-      - graylink-network
-
-networks:
-  graylink-network:
-    driver: bridge 
+      - TZ=Asia/Shanghai
+    restart: unless-stopped 
