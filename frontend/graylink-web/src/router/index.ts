@@ -19,6 +19,11 @@ const routes: RouteRecordRaw[] = [
     name: 'Emby',
     component: () => import('@/views/emby/index.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/error/404.vue')
   }
 ]
 
@@ -29,5 +34,13 @@ const router = createRouter({
   push: (to: RouteLocationRaw) => Promise<void>
   replace: (to: RouteLocationRaw) => Promise<void>
 }
+
+router.beforeEach((to, from, next) => {
+  if (to.path === '/') {
+    next({ path: '/login' })
+  } else {
+    next()
+  }
+})
 
 export default router

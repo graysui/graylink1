@@ -69,6 +69,14 @@ python main.py
 
 ## 🐳 Docker 部署
 
+### 系统架构支持
+
+镜像支持以下架构：
+- `linux/amd64`: 适用于 Intel/AMD 处理器
+- `linux/arm64`: 适用于 ARM 处理器（如 Apple M1/M2、树莓派等）
+
+Docker 会自动选择适合您系统的版本。
+
 ### 从 Docker Hub 安装（推荐）
 
 ```bash
@@ -79,16 +87,6 @@ docker pull gray777/graylink:latest
 docker pull gray777/graylink:v1.0.0
 ```
 
-### 从 GitHub Packages 安装
-
-```bash
-# 登录到 GitHub Container Registry
-echo $GITHUB_TOKEN | docker login ghcr.io -u graysui --password-stdin
-
-# 拉取镜像
-docker pull ghcr.io/graysui/graylink1:latest
-```
-
 ### 使用 docker-compose
 
 ```yaml
@@ -96,10 +94,7 @@ version: '3'
 
 services:
   graylink:
-    # 使用 Docker Hub 镜像
     image: gray777/graylink:latest
-    # 或者使用 GitHub Container Registry 镜像
-    # image: ghcr.io/graysui/graylink1:latest
     ports:
       - "8728:8728"
       - "8000:8000"

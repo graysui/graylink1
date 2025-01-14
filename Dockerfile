@@ -15,8 +15,15 @@ COPY frontend/graylink-web/ .
 # 显示目录内容以进行调试
 RUN ls -la
 
+# 设置生产环境变量
+ENV NODE_ENV=production
+ENV VITE_APP_API_BASE_URL=/api
+
 # 运行构建命令并添加详细输出
 RUN npm run build --verbose
+
+# 验证构建输出
+RUN ls -la dist/
 
 # 后端构建阶段
 FROM python:3.11-slim as backend-builder
@@ -34,6 +41,9 @@ RUN apt-get update && apt-get install -y nginx && rm -rf /var/lib/apt/lists/*
 # 复制前端构建产物
 COPY --from=frontend-builder /app/dist /app/frontend/dist
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# 验证前端文件
+RUN ls -la /app/frontend/dist/
 
 # 复制后端代码和依赖
 COPY --from=backend-builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages

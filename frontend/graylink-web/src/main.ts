@@ -19,10 +19,10 @@ app.component('ProgressBar', ProgressBar)
 app.component('ConfirmDialog', ConfirmDialog)
 app.component('StatusIndicator', StatusIndicator)
 
+// 使用插件
 app.use(ElementPlus)
+app.use(router as any)
 setupStore(app)
 
-// 修复路由类型问题
-app.use(router as any)
-
-app.mount('#app') 
+// 挂载应用
+app.mount('#app')
