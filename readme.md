@@ -97,7 +97,7 @@ version: '3'
 services:
   graylink:
     # 使用 Docker Hub 镜像
-    image: graysui/graylink:latest
+    image: gray777/graylink:latest
     # 或者使用 GitHub Container Registry 镜像
     # image: ghcr.io/graysui/graylink1:latest
     ports:
