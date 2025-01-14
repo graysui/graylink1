@@ -2,10 +2,21 @@
 # 前端构建阶段
 FROM node:18-alpine as frontend-builder
 WORKDIR /app
+
+# 首先只复制 package.json 和 package-lock.json
 COPY frontend/graylink-web/package*.json ./
+
+# 安装依赖
 RUN npm install
+
+# 复制其余前端源代码
 COPY frontend/graylink-web/ .
-RUN npm run build
+
+# 显示目录内容以进行调试
+RUN ls -la
+
+# 运行构建命令并添加详细输出
+RUN npm run build --verbose
 
 # 后端构建阶段
 FROM python:3.11-slim as backend-builder
