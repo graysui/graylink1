@@ -1,5 +1,8 @@
 # GrayLink
 
+![Docker Build](https://github.com/graysui/graylink1/actions/workflows/docker-publish.yml/badge.svg)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/graysui/graylink1)
+
 GrayLink 是一个高性能的 Google Drive 文件监控和软链接管理系统，支持 Docker 部署，采用前后端分离架构。本项目主要用于监控 Google Drive 目录变化，自动生成相应的软链接，并支持 Emby 媒体库自动刷新。
 
 ## 🌟 特性
@@ -66,30 +69,45 @@ python main.py
 
 ## 🐳 Docker 部署
 
-使用 Docker Compose 一键部署：
+### 从 Docker Hub 安装（推荐）
+
 ```bash
-docker-compose up -d
+# 拉取最新版本
+docker pull gray777/graylink:latest
+
+# 或者指定版本
+docker pull gray777/graylink:v1.0.0
 ```
 
-## 📝 配置说明
+### 从 GitHub Packages 安装
 
-### 前端配置
-- `.env.development`: 开发环境配置
-- `.env.production`: 生产环境配置
+```bash
+# 登录到 GitHub Container Registry
+echo $GITHUB_TOKEN | docker login ghcr.io -u graysui --password-stdin
 
-### 后端配置
-- `config/`: 配置文件目录
-  - `app.yaml`: 应用配置
-  - `google.yaml`: Google Drive 配置
-  - `emby.yaml`: Emby 配置
+# 拉取镜像
+docker pull ghcr.io/graysui/graylink1:latest
+```
 
-## 🤝 贡献指南
+### 使用 docker-compose
 
-1. Fork 本仓库
-2. 创建特性分支
-3. 提交更改
-4. 发起 Pull Request
+```yaml
+version: '3'
 
-## 📄 许可证
-
-本项目采用 MIT 许可证
+services:
+  graylink:
+    # 使用 Docker Hub 镜像
+    image: graysui/graylink:latest
+    # 或者使用 GitHub Container Registry 镜像
+    # image: ghcr.io/graysui/graylink1:latest
+    ports:
+      - "8728:8728"
+      - "8000:8000"
+    volumes:
+      - ./config:/app/backend/config
+      - ./data:/app/backend/data
+      - /path/to/gdrive:/gdrive:shared
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+```
