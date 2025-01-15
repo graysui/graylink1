@@ -1,119 +1,37 @@
 import { defineStore } from 'pinia'
-import type { SystemSettings } from '@/types/settings'
-import { api } from '@/api'
-import type { ApiResponse } from '@/types/api'
+import { ref } from 'vue'
+import { request } from '@/utils/request'
+import type { SystemSettings, EmbySettings } from '@/types/settings'
 
-interface SettingState {
-  settings: SystemSettings
-  loading: boolean
-}
+export const useSettingStore = defineStore('setting', () => {
+  const settings = ref<SystemSettings>()
 
-const testEmbyConnection = async (config: SystemSettings['emby']) => {
-  try {
-    await api.post('/emby/test', config)
-    return true
-  } catch (error) {
-    throw new Error('连接失败')
+  const getSettings = async () => {
+    const { data } = await request.get<SystemSettings>('/api/setting')
+    settings.value = data
+    return data
   }
-}
 
-export const useSettingStore = defineStore('setting', {
-  state: (): SettingState => ({
-    settings: {
-      monitor: {
-        interval: 5000,
-        batch_size: 100,
-        max_retries: 3,
-        google_drive: {
-          enabled: false,
-          client_id: '',
-          client_secret: '',
-          token_file: '',
-          watch_folder_id: '',
-          check_interval: '1h',
-          refresh_token: '',
-          path_mapping: {},
-        },
-      },
-      symlink: {
-        source_dir: '',
-        target_dir: '',
-        preserve_structure: true,
-        backup_on_conflict: true,
-        conflict_strategy: 'rename',
-        auto_rebuild: false,
-        rebuild_interval: 3600,
-        path_mapping: {},
-      },
-      emby: {
-        host: '',
-        api_key: '',
-        auto_refresh: false,
-        refresh_delay: 5000,
-        server_url: '',
-        library_path: '',
-        path_mapping: {},
-      },
-      security: {
-        jwt_secret: '',
-        token_expire: 7200,
-        max_login_attempts: 5,
-        session_timeout: 3600,
-        password_policy: {
-          min_length: 8,
-          require_uppercase: true,
-          require_lowercase: true,
-          require_numbers: true,
-          require_special: true
-        },
-      },
-      account: {
-        username: '',
-        email: '',
-        password: '',
-        confirm_password: '',
-        allow_register: true,
-        default_role: 'user',
-      },
-    },
-    loading: false,
-  }),
+  const saveSettings = async (settings: SystemSettings) => {
+    await request.post('/api/setting', settings)
+  }
 
-  actions: {
-    async getSettings() {
-      this.loading = true
-      try {
-        const response = await api.get<ApiResponse<SystemSettings>>('/settings')
-        if (response.data && response.data.data) {
-          this.settings = response.data.data
-        }
-      } finally {
-        this.loading = false
-      }
-    },
+  const testEmbyConnection = async (emby: EmbySettings) => {
+    await request.post('/api/emby/test', emby)
+  }
 
-    async saveSettings(settings: SystemSettings) {
-      this.loading = true
-      try {
-        await api.post('/settings', settings)
-        this.settings = settings
-      } finally {
-        this.loading = false
-      }
-    },
+  const updatePassword = async (password: string, confirmPassword: string) => {
+    await request.post('/api/user/password', {
+      password,
+      confirm_password: confirmPassword
+    })
+  }
 
-    async updatePassword(oldPassword: string, newPassword: string) {
-      this.loading = true
-      try {
-        await api.post('/settings/password', {
-          old_password: oldPassword,
-          new_password: newPassword,
-        })
-      } finally {
-        this.loading = false
-      }
-    },
-
+  return {
+    settings,
+    getSettings,
+    saveSettings,
     testEmbyConnection,
-  },
+    updatePassword
+  }
 })

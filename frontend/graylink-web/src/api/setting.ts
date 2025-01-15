@@ -1,8 +1,19 @@
-import { api } from '@/utils/request'
-import type { SystemSettings } from '@/types/settings'
+import { request } from '@/utils/request'
+
+export interface SettingForm {
+  monitorPath: string
+  embyServer: string
+  embyApiKey: string
+  gdriveClientId: string
+  gdriveClientSecret: string
+}
 
 export const settingApi = {
-  getSettings: () => api.get<SystemSettings>('/settings'),
-  updateSettings: (settings: Partial<SystemSettings>) => api.post('/settings', settings),
-  resetSettings: () => api.post('/settings/reset')
+  updateSettings(data: SettingForm) {
+    return request.post('/api/setting', data)
+  },
+
+  resetSettings() {
+    return request.post('/api/setting/reset')
+  }
 }

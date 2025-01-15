@@ -27,20 +27,6 @@
         </el-form-item>
 
         <template v-if="form.monitor.google_drive.enabled">
-          <el-alert
-            title="Drive Activity API 配置说明"
-            type="info"
-            :closable="false"
-            class="gdrive-info"
-          >
-            <p>配置步骤：</p>
-            <ol>
-              <li>在 Emby 管理后台 -> 高级 -> API 密钥中生成新的 API Key</li>
-              <li>确保 Emby 服务器可以访问到媒体文件目录</li>
-              <li>媒体库路径应与 Emby 服务器中配置的媒体库路径一致</li>
-            </ol>
-          </el-alert>
-
           <el-form-item label="Client ID" prop="monitor.google_drive.client_id">
             <el-input
               v-model="form.monitor.google_drive.client_id"
@@ -80,7 +66,7 @@
               placeholder="请输入要监控的 Google Drive 文件夹 ID"
             >
               <template #append>
-                <el-button @click="handleCheckActivities"> 检查活动 </el-button>
+                <el-button @click="handleCheckActivities">检查活动</el-button>
               </template>
             </el-input>
             <div class="form-item-tip">
@@ -291,7 +277,7 @@
       <!-- 操作按钮 -->
       <div class="form-actions">
         <el-button @click="resetForm">重置</el-button>
-        <el-button type="primary" @click="submitForm" :loading="saving"> 保存 </el-button>
+        <el-button type="primary" @click="submitForm" :loading="saving">保存</el-button>
       </div>
     </el-form>
   </div>
@@ -309,6 +295,9 @@ const settingStore = useSettingStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const pathMappingText = ref('')
+const testingEmby = ref(false)
+const changingPassword = ref(false)
+const saving = ref(false)
 
 // 添加确认密码验证函数
 const validateConfirmPassword = (rule: any, value: string, callback: any) => {
@@ -325,7 +314,7 @@ const validateConfirmPassword = (rule: any, value: string, callback: any) => {
 const rules: FormRules = {
   'monitor.interval': [
     { required: true, message: '请输入监控间隔', trigger: 'blur' },
-    { type: 'number', min: 1000, message: '间隔不能小于1秒', trigger: 'blur' },
+    { type: 'number', min: 1000, message: '间隔不能小于1秒', trigger: 'blur' }
   ],
   'monitor.google_drive.client_id': [{ required: true, message: '请输入 Client ID', trigger: 'blur' }],
   'monitor.google_drive.client_secret': [{ required: true, message: '请输入 Client Secret', trigger: 'blur' }],
@@ -334,12 +323,8 @@ const rules: FormRules = {
   'emby.api_key': [{ required: true, message: '请输入 API Key', trigger: 'blur' }],
   'emby.library_path': [{ required: true, message: '请选择媒体库路径', trigger: 'blur' }],
   'account.username': [{ required: true, message: '请输入账户名称', trigger: 'blur' }],
-  'account.password': [
-    { min: 6, message: '密码长度至少6位', trigger: 'blur' }
-  ],
-  'account.confirm_password': [
-    { validator: validateConfirmPassword, trigger: 'blur' }
-  ],
+  'account.password': [{ min: 6, message: '密码长度至少6位', trigger: 'blur' }],
+  'account.confirm_password': [{ validator: validateConfirmPassword, trigger: 'blur' }],
   'symlink.source_dir': [{ required: true, message: '请选择源目录', trigger: 'blur' }],
   'symlink.target_dir': [{ required: true, message: '请选择目标目录', trigger: 'blur' }],
   'symlink.conflict_strategy': [{ required: true, message: '请选择冲突处理策略', trigger: 'blur' }]
@@ -402,11 +387,6 @@ const form = reactive<SystemSettings>({
     confirm_password: ''
   }
 })
-
-// 状态变量
-const testingEmby = ref(false)
-const changingPassword = ref(false)
-const saving = ref(false)
 
 // 处理函数
 const handleAuthGDrive = async () => {
@@ -472,24 +452,6 @@ const handleUpdatePassword = async () => {
   }
 }
 
-const handleTestEmbyConnection = async () => {
-  if (!form.emby.host || !form.emby.api_key) {
-    ElMessage.warning('请先填写Emby服务器配置')
-    return
-  }
-
-  try {
-    loading.value = true
-    await settingStore.testEmbyConnection(form.emby)
-    ElMessage.success('连接成功')
-  } catch (error) {
-    ElMessage.error('连接失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 添加检查活动处理函数
 const handleCheckActivities = async () => {
   try {
     loading.value = true
@@ -502,7 +464,6 @@ const handleCheckActivities = async () => {
   }
 }
 
-// 添加路径映射变更处理函数
 const handlePathMappingChange = (value: string) => {
   try {
     const mappings = value
@@ -524,14 +485,62 @@ const handlePathMappingChange = (value: string) => {
 }
 </script>
 
-<style scoped lang="scss">
-.path-mapping-item {
-  margin: 8px 0;
-  padding: 8px;
-  border: 1px solid #eee;
-  border-radius: 4px;
+<style scoped>
+.setting-container {
+  padding: 20px;
+}
+
+.setting-card {
+  margin-bottom: 20px;
+}
+
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.form-item-tip {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.token-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.token-path {
+  color: #666;
+  font-size: 12px;
+}
+
+.form-actions {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.gdrive-info,
+.emby-info,
+.account-info,
+.symlink-info {
+  margin-bottom: 20px;
+}
+
+:deep(.el-alert__content) {
+  p {
+    margin: 8px 0;
+  }
+
+  ol, ul {
+    margin: 4px 0;
+    padding-left: 20px;
+  }
+
+  li {
+    margin: 4px 0;
+  }
 }
 </style>

@@ -30,7 +30,7 @@
           <el-icon><VideoCamera /></el-icon>
           <template #title>Emby 管理</template>
         </el-menu-item>
-        <el-menu-item index="/settings">
+        <el-menu-item index="/setting">
           <el-icon><Tools /></el-icon>
           <template #title>系统设置</template>
         </el-menu-item>
