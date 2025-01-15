@@ -28,6 +28,10 @@ if [ -d "/app/frontend/dist" ]; then
     # 检查assets目录
     echo "Checking assets directory..."
     ls -la /app/frontend/dist/assets/
+    
+    # 检查JS文件
+    echo "Checking main JS file..."
+    find /app/frontend/dist/assets -name "index-*.js" -exec cat {} \;
 else
     echo "ERROR: Frontend dist directory not found!"
     exit 1
@@ -55,6 +59,8 @@ if pgrep nginx > /dev/null; then
     # 检查nginx访问
     echo "Testing nginx..."
     curl -v http://localhost:8728/
+    echo "Testing login page..."
+    curl -v http://localhost:8728/login
 else
     echo "ERROR: Nginx failed to start"
     exit 1

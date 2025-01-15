@@ -13,16 +13,16 @@ import StatusIndicator from '@/components/common/StatusIndicator.vue'
 
 const app = createApp(App)
 
+// 使用插件
+app.use(ElementPlus)
+setupStore(app)
+app.use(router as any)
+
 // 注册全局组件
 app.component('ErrorHandler', ErrorHandler)
 app.component('ProgressBar', ProgressBar)
 app.component('ConfirmDialog', ConfirmDialog)
 app.component('StatusIndicator', StatusIndicator)
-
-// 使用插件
-app.use(ElementPlus)
-app.use(router as any)
-setupStore(app)
 
 // 挂载应用
 app.mount('#app')

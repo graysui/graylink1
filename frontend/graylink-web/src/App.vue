@@ -8,7 +8,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { setupErrorHandling } from '@/utils/error'
-import type { Language } from 'element-plus/es/locale'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 onMounted(() => {
@@ -30,4 +29,4 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-</style> 
+</style>

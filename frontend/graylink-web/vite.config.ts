@@ -7,7 +7,7 @@ import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [vue()],
   resolve: {
     alias: {
@@ -19,19 +19,16 @@ export default defineConfig({
     assetsDir: 'assets',
     // 使用 esbuild 进行压缩，这是 Vite 的默认配置
     minify: 'esbuild',
-    sourcemap: false, // 生产环境不需要 sourcemap
+    sourcemap: true, // 开启 sourcemap 以便调试
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {
-          'element-plus': ['element-plus'],
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
+          'element-plus': ['element-plus', 'element-plus/dist/locale/zh-cn.mjs'],
           'file-operations': ['@/views/file/index.vue', '@/stores/modules/file'],
           'auth': ['@/views/login/index.vue', '@/stores/modules/user']
-        },
-        assetFileNames: 'assets/[name]-[hash][extname]',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js'
+        }
       }
     }
   },
