@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(prefix="/emby", tags=["emby"])
 
 class EmbyStatus(BaseModel):
     connected: bool
@@ -14,7 +14,7 @@ class EmbyLibrary(BaseModel):
     name: str
     path: str
 
-@router.get("/emby/status")
+@router.get("/status")
 async def check_status():
     return {
         "code": 0,
@@ -25,28 +25,28 @@ async def check_status():
         }
     }
 
-@router.get("/emby/libraries")
+@router.get("/libraries")
 async def get_libraries():
     return {
         "code": 0,
         "data": []
     }
 
-@router.post("/emby/refresh")
+@router.post("/refresh")
 async def refresh_by_paths(paths: List[str]):
     return {
         "code": 0,
         "data": None
     }
 
-@router.post("/emby/refresh/root")
+@router.post("/refresh/root")
 async def refresh_root():
     return {
         "code": 0,
         "data": None
     }
 
-@router.post("/emby/test")
+@router.post("/test")
 async def test_connection():
     return {
         "code": 0,

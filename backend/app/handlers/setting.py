@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(prefix="/settings", tags=["settings"])
 
 class SystemSettings(BaseModel):
     monitor_paths: List[str] = []
@@ -11,7 +11,7 @@ class SystemSettings(BaseModel):
     gdrive_client_id: Optional[str] = None
     gdrive_client_secret: Optional[str] = None
 
-@router.get("/settings")
+@router.get("/")
 async def get_settings():
     return {
         "code": 0,
@@ -24,14 +24,14 @@ async def get_settings():
         }
     }
 
-@router.post("/settings")
+@router.post("/")
 async def update_settings(settings: SystemSettings):
     return {
         "code": 0,
         "data": None
     }
 
-@router.post("/settings/reset")
+@router.post("/reset")
 async def reset_settings():
     return {
         "code": 0,

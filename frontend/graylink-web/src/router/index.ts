@@ -1,63 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { Router, RouteRecordRaw, RouteLocationRaw } from 'vue-router'
-
-const routes: RouteRecordRaw[] = [
-  {
-    path: '/',
-    name: 'Root',
-    component: () => import('@/views/monitor/index.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/views/login/index.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: '/monitor',
-    name: 'Monitor',
-    component: () => import('@/views/monitor/index.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/file',
-    name: 'File',
-    component: () => import('@/views/file/index.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/symlink',
-    name: 'Symlink',
-    component: () => import('@/views/symlink/index.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/emby',
-    name: 'Emby',
-    component: () => import('@/views/emby/index.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/setting',
-    name: 'Setting',
-    component: () => import('@/views/setting/index.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/:pathMatch(.*)*',
-    name: 'NotFound',
-    component: () => import('@/views/error/404.vue')
-  }
-]
+import type { Router } from 'vue-router'
+import { routes } from './types'
 
 const router = createRouter({
   history: createWebHistory(),
-  routes,
-}) as Router & {
-  push: (to: RouteLocationRaw) => Promise<void>
-  replace: (to: RouteLocationRaw) => Promise<void>
-}
+  routes
+})
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')

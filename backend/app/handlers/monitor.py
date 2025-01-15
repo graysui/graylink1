@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(prefix="/monitor", tags=["monitor"])
 
 class MonitorState(BaseModel):
     is_running: bool
@@ -10,7 +10,7 @@ class MonitorState(BaseModel):
     total_files: int = 0
     monitored_paths: List[str] = []
 
-@router.get("/monitor/status")
+@router.get("/status")
 async def get_status():
     return {
         "code": 0,
@@ -22,7 +22,7 @@ async def get_status():
         }
     }
 
-@router.get("/monitor/logs")
+@router.get("/logs")
 async def get_logs(limit: int = 100):
     return {
         "code": 0,
@@ -31,28 +31,28 @@ async def get_logs(limit: int = 100):
         }
     }
 
-@router.post("/monitor/start")
+@router.post("/start")
 async def start_monitor():
     return {
         "code": 0,
         "data": None
     }
 
-@router.post("/monitor/stop")
+@router.post("/stop")
 async def stop_monitor():
     return {
         "code": 0,
         "data": None
     }
 
-@router.post("/monitor/logs/clear")
+@router.post("/logs/clear")
 async def clear_logs():
     return {
         "code": 0,
         "data": None
     }
 
-@router.get("/monitor/stats")
+@router.get("/stats")
 async def get_stats():
     return {
         "code": 0,

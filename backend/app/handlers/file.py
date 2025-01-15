@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(prefix="/file", tags=["files"])
 
 class FileItem(BaseModel):
     name: str
@@ -15,7 +15,7 @@ class BatchOperationParams(BaseModel):
     operation: str
     paths: List[str]
 
-@router.get("/file/list")
+@router.get("/list")
 async def get_files(path: str):
     return {
         "code": 0,
@@ -25,14 +25,14 @@ async def get_files(path: str):
         }
     }
 
-@router.post("/file/batch")
+@router.post("/batch")
 async def batch_operation(params: BatchOperationParams):
     return {
         "code": 0,
         "data": None
     }
 
-@router.get("/file/stats")
+@router.get("/stats")
 async def get_stats():
     return {
         "code": 0,
@@ -42,7 +42,7 @@ async def get_stats():
         }
     }
 
-@router.get("/file/tree")
+@router.get("/tree")
 async def get_directory_tree():
     return {
         "code": 0,

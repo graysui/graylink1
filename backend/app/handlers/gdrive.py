@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(prefix="/gdrive", tags=["gdrive"])
 
 class DriveActivity(BaseModel):
     time: str
@@ -14,7 +14,7 @@ class ActivityResult(BaseModel):
     activities: List[DriveActivity]
     next_page_token: Optional[str] = None
 
-@router.get("/gdrive/auth-url")
+@router.get("/auth-url")
 async def get_auth_url():
     return {
         "code": 0,
@@ -23,7 +23,7 @@ async def get_auth_url():
         }
     }
 
-@router.post("/gdrive/start-auth")
+@router.post("/start-auth")
 async def start_auth():
     return {
         "code": 0,
@@ -35,7 +35,7 @@ async def start_auth():
         }
     }
 
-@router.post("/gdrive/check-auth")
+@router.post("/check-auth")
 async def check_auth(device_code: str):
     return {
         "code": 0,
@@ -44,7 +44,7 @@ async def check_auth(device_code: str):
         }
     }
 
-@router.get("/gdrive/check-activities")
+@router.get("/check-activities")
 async def check_activities():
     return {
         "code": 0,
@@ -54,7 +54,7 @@ async def check_activities():
         }
     }
 
-@router.get("/gdrive/test")
+@router.get("/test")
 async def test_connection():
     return {
         "code": 0,
