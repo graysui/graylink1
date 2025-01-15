@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
-from handlers import auth
+from handlers import auth, monitor, file, symlink, emby, gdrive
 from models.user import Base
 from app.core.database import engine, get_db
 
@@ -30,7 +30,12 @@ logger.add(
 )
 
 # 注册路由
-app.include_router(auth.router, prefix="/auth", tags=["认证"])
+app.include_router(auth.router, prefix="/api/auth", tags=["认证"])
+app.include_router(monitor.router, prefix="/api/monitor", tags=["监控"])
+app.include_router(file.router, prefix="/api/file", tags=["文件"])
+app.include_router(symlink.router, prefix="/api/symlink", tags=["软链接"])
+app.include_router(emby.router, prefix="/api/emby", tags=["Emby"])
+app.include_router(gdrive.router, prefix="/api/gdrive", tags=["Google Drive"])
 
 @app.get("/")
 async def root():

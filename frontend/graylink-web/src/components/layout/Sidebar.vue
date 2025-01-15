@@ -11,22 +11,22 @@
     </el-menu-item>
 
     <el-menu-item index="/file">
-      <el-icon><FolderOpened /></el-icon>
+      <el-icon><Folder /></el-icon>
       <template #title>文件管理</template>
     </el-menu-item>
 
     <el-menu-item index="/symlink">
-      <el-icon><Connection /></el-icon>
+      <el-icon><Link /></el-icon>
       <template #title>软链接管理</template>
     </el-menu-item>
 
     <el-menu-item index="/emby">
-      <el-icon><VideoCamera /></el-icon>
+      <el-icon><VideoPlay /></el-icon>
       <template #title>Emby管理</template>
     </el-menu-item>
 
     <el-menu-item index="/setting">
-      <el-icon><Tools /></el-icon>
+      <el-icon><Setting /></el-icon>
       <template #title>系统设置</template>
     </el-menu-item>
   </el-menu>
@@ -37,10 +37,10 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   Monitor,
-  FolderOpened,
-  Connection,
-  VideoCamera,
-  Tools
+  Folder,
+  Link,
+  VideoPlay,
+  Setting
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
