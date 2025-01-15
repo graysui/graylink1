@@ -37,7 +37,7 @@ WORKDIR /app
 
 # 安装必要的工具和nginx
 RUN apt-get update && \
-    apt-get install -y nginx procps && \
+    apt-get install -y nginx procps curl && \
     rm -rf /var/lib/apt/lists/*
 
 # 创建必要的目录

@@ -14,6 +14,20 @@ echo "Checking frontend files..."
 if [ -d "/app/frontend/dist" ]; then
     echo "Frontend dist directory exists"
     ls -la /app/frontend/dist/
+    
+    # 检查关键文件
+    if [ ! -f "/app/frontend/dist/index.html" ]; then
+        echo "ERROR: index.html not found!"
+        exit 1
+    fi
+    
+    # 检查index.html内容
+    echo "Checking index.html content..."
+    cat /app/frontend/dist/index.html
+    
+    # 检查assets目录
+    echo "Checking assets directory..."
+    ls -la /app/frontend/dist/assets/
 else
     echo "ERROR: Frontend dist directory not found!"
     exit 1
@@ -38,6 +52,9 @@ echo "Nginx started successfully"
 # 检查nginx是否正在运行
 if pgrep nginx > /dev/null; then
     echo "Nginx is running"
+    # 检查nginx访问
+    echo "Testing nginx..."
+    curl -v http://localhost:8728/
 else
     echo "ERROR: Nginx failed to start"
     exit 1

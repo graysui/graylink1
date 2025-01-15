@@ -7,6 +7,7 @@ import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/',
   plugins: [vue()],
   resolve: {
     alias: {
@@ -18,7 +19,7 @@ export default defineConfig({
     assetsDir: 'assets',
     // 使用 esbuild 进行压缩，这是 Vite 的默认配置
     minify: 'esbuild',
-    sourcemap: true, // 添加 sourcemap 以便调试
+    sourcemap: false, // 生产环境不需要 sourcemap
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
