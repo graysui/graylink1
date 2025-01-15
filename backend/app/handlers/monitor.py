@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
+from app.utils.config import get_config
 
 router = APIRouter(prefix="/monitor", tags=["monitor"])
 

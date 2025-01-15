@@ -1,170 +1,130 @@
 import os
-import shutil
-from typing import List, Dict, Optional
-from datetime import datetime
+from typing import Dict, List, Optional
 from loguru import logger
-from pathlib import Path
-from ...core.config import settings
+from app.utils.symlink import create_symlink
+from app.utils.path import normalize_path, get_relative_path
+from app.utils.config import get_config
 
 class SymlinkManager:
+    """软链接管理器"""
+    
     def __init__(self):
-        self.source_dir = settings.symlink.source_dir  # rclone挂载路径，如 /mnt/media/nastool
-        self.target_dir = settings.symlink.target_dir  # 软链接目标路径，如 /mnt/nastool-nfo
-        self._ensure_directories()
-
-    def _ensure_directories(self):
-        """确保必要的目录存在"""
-        os.makedirs(self.source_dir, exist_ok=True)
-        os.makedirs(self.target_dir, exist_ok=True)
-
-    async def create_symlink(self, relative_path: str) -> bool:
-        """创建软链接
+        self.config = get_config()
+        self._symlinks: Dict[str, Dict] = {}
+        self._load_symlinks()
         
-        Args:
-            relative_path: 相对路径，如 "剧集/国产剧/一二/1.mkv"
-        """
+    def _load_symlinks(self):
+        """加载已存在的软链接"""
         try:
-            # 构建完整的源文件路径和目标路径
-            source_path = os.path.join(self.source_dir, relative_path)
-            target_path = os.path.join(self.target_dir, relative_path)
-            target_dir = os.path.dirname(target_path)
-
-            # 检查源文件是否存在
-            if not os.path.exists(source_path):
-                logger.error(f"Source file does not exist: {source_path}")
-                return False
-
-            # 创建目标目录结构
-            os.makedirs(target_dir, exist_ok=True)
-
-            # 检查目标路径是否已存在
-            if os.path.exists(target_path):
-                if os.path.islink(target_path):
-                    current_source = os.path.realpath(target_path)
-                    if current_source == source_path:
-                        return True  # 已经存在相同的软链接
-                    os.unlink(target_path)  # 删除现有的软链接
-                else:
-                    # 如果是实体文件或目录，重命名为备份
-                    backup_path = f"{target_path}.bak.{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                    shutil.move(target_path, backup_path)
-                    logger.warning(f"Existing file backed up: {target_path} -> {backup_path}")
-
-            # 创建软链接，保持相对路径结构
-            os.symlink(source_path, target_path)
-            logger.info(f"Created symlink: {target_path} -> {source_path}")
-            return True
-
+            # 从配置的监控路径中加载软链接
+            for path in self.config.monitor.paths:
+                if os.path.exists(path):
+                    for root, _, files in os.walk(path):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            if os.path.islink(file_path):
+                                target = os.path.realpath(file_path)
+                                self._symlinks[file_path] = {
+                                    'source': target,
+                                    'target': file_path,
+                                    'valid': os.path.exists(target)
+                                }
         except Exception as e:
-            logger.error(f"Error creating symlink for {relative_path}: {str(e)}")
-            return False
-
-    async def remove_symlink(self, relative_path: str) -> bool:
-        """删除软链接"""
-        try:
-            target_path = os.path.join(self.target_dir, relative_path)
+            logger.error(f"加载软链接失败: {str(e)}")
             
-            if os.path.islink(target_path):
-                os.unlink(target_path)
-                logger.info(f"Removed symlink: {target_path}")
-                
-                # 清理空目录
-                await self._cleanup_empty_dirs(os.path.dirname(target_path))
+    def create(self, source: str, target: str) -> bool:
+        """创建软链接"""
+        try:
+            source = normalize_path(source)
+            target = normalize_path(target)
+            
+            result = create_symlink(source, target)
+            if result is True or result is None:
+                self._symlinks[target] = {
+                    'source': source,
+                    'target': target,
+                    'valid': True
+                }
                 return True
             return False
-
         except Exception as e:
-            logger.error(f"Error removing symlink {target_path}: {str(e)}")
+            logger.error(f"创建软链接失败: {str(e)}")
             return False
-
-    async def _cleanup_empty_dirs(self, path: str):
-        """清理空目录"""
+            
+    def remove(self, target: str) -> bool:
+        """删除软链接"""
         try:
-            current = Path(path)
-            while current != Path(self.target_dir):
-                if not any(current.iterdir()):
-                    current.rmdir()
-                    logger.info(f"Removed empty directory: {current}")
-                    current = current.parent
-                else:
-                    break
+            target = normalize_path(target)
+            if target in self._symlinks:
+                if os.path.exists(target):
+                    os.remove(target)
+                del self._symlinks[target]
+                return True
+            return False
         except Exception as e:
-            logger.error(f"Error cleaning up directories: {str(e)}")
-
-    async def verify_symlinks(self) -> Dict[str, int]:
-        """验证所有软链接的完整性"""
-        valid_count = 0
-        invalid_count = 0
-        missing_count = 0
-        
-        for root, _, files in os.walk(self.target_dir):
-            for file in files:
-                full_path = os.path.join(root, file)
-                if os.path.islink(full_path):
-                    target = os.path.realpath(full_path)
-                    if not os.path.exists(target):
-                        missing_count += 1
-                    elif not target.startswith(self.source_dir):
-                        invalid_count += 1
-                    else:
-                        valid_count += 1
-
-        return {
-            "valid": valid_count,
-            "invalid": invalid_count,
-            "missing": missing_count
-        }
-
-    async def rebuild_symlinks(self, file_records: List[Dict]) -> Dict[str, int]:
+            logger.error(f"删除软链接失败: {str(e)}")
+            return False
+            
+    def verify(self) -> Dict[str, int]:
+        """验证所有软链接"""
+        try:
+            valid = 0
+            invalid = 0
+            missing = 0
+            
+            for target, info in self._symlinks.items():
+                if not os.path.exists(target):
+                    missing += 1
+                elif not os.path.exists(info['source']):
+                    invalid += 1
+                else:
+                    valid += 1
+                    
+            return {
+                'total': len(self._symlinks),
+                'valid': valid,
+                'invalid': invalid,
+                'missing': missing
+            }
+        except Exception as e:
+            logger.error(f"验证软链接失败: {str(e)}")
+            return {
+                'total': 0,
+                'valid': 0,
+                'invalid': 0,
+                'missing': 0
+            }
+            
+    def rebuild(self) -> bool:
         """重建所有软链接"""
         try:
-            # 清理现有的软链接
-            await self.clear_all_symlinks()
-            
-            valid_count = 0
-            invalid_count = 0
-            missing_count = 0
-            
-            for record in file_records:
-                source_path = os.path.join(self.source_dir, record['path'])
-                if not os.path.exists(source_path):
-                    missing_count += 1
-                    continue
-                    
-                if await self.create_symlink(record['path']):
-                    valid_count += 1
-                else:
-                    invalid_count += 1
-
-            return {
-                "valid": valid_count,
-                "invalid": invalid_count,
-                "missing": missing_count
-            }
-
+            success = True
+            for target, info in self._symlinks.items():
+                if not os.path.exists(target) or not os.path.exists(info['source']):
+                    if not self.create(info['source'], target):
+                        success = False
+            return success
         except Exception as e:
-            logger.error(f"Error rebuilding symlinks: {str(e)}")
-            raise
-
-    async def clear_all_symlinks(self) -> int:
-        """清理所有软链接"""
-        removed_count = 0
-        
-        for root, _, files in os.walk(self.target_dir, topdown=False):
-            for file in files:
-                full_path = os.path.join(root, file)
-                if os.path.islink(full_path):
-                    try:
-                        os.unlink(full_path)
-                        removed_count += 1
-                    except Exception as e:
-                        logger.error(f"Error removing symlink {full_path}: {str(e)}")
-
-            # 尝试删除空目录
-            if root != self.target_dir:
-                try:
-                    os.rmdir(root)
-                except OSError:
-                    pass  # 目录不为空，跳过
-
-        return removed_count 
+            logger.error(f"重建软链接失败: {str(e)}")
+            return False
+            
+    def clear(self) -> bool:
+        """清除所有软链接"""
+        try:
+            for target in list(self._symlinks.keys()):
+                self.remove(target)
+            return True
+        except Exception as e:
+            logger.error(f"清除软链接失败: {str(e)}")
+            return False
+            
+    def get_all(self) -> List[Dict]:
+        """获取所有软链接信息"""
+        return [
+            {
+                'source': info['source'],
+                'target': target,
+                'valid': os.path.exists(info['source']) and os.path.exists(target)
+            }
+            for target, info in self._symlinks.items()
+        ] 
