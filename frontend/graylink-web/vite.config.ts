@@ -7,7 +7,7 @@ import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/',
+  base: './',
   plugins: [vue()],
   resolve: {
     alias: {
@@ -28,7 +28,10 @@ export default defineConfig({
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
           'file-operations': ['@/views/file/index.vue', '@/stores/modules/file'],
           'auth': ['@/views/login/index.vue', '@/stores/modules/user']
-        }
+        },
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js'
       }
     }
   },
