@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
-from app.handlers import auth, monitor, file, symlink, emby, gdrive
-from app.models.user import Base
-from app.core.database import engine, get_db
+from handlers import auth, monitor, file, symlink, emby, gdrive
+from models.user import Base
+from core.database import engine, get_db
 
 # 创建FastAPI应用
 app = FastAPI(
