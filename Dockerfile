@@ -1,6 +1,6 @@
 # 使用多阶段构建
 # 前端构建阶段
-FROM node:18-alpine as frontend-builder
+FROM node:18-alpine AS frontend-builder
 WORKDIR /app
 
 # 首先只复制 package.json 和 package-lock.json
@@ -26,8 +26,17 @@ RUN npm run build --verbose
 RUN ls -la dist/
 
 # 后端构建阶段
-FROM python:3.11-slim as backend-builder
+FROM python:3.11-slim AS backend-builder
 WORKDIR /app
+
+# 安装编译依赖
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    python3-dev \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
