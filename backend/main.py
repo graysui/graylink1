@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from handlers import auth
+from models.user import Base
+from app.core.database import engine, get_db
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -26,10 +29,25 @@ logger.add(
     level="INFO"
 )
 
+# 注册路由
+app.include_router(auth.router, prefix="/auth", tags=["认证"])
+
 @app.get("/")
 async def root():
     """健康检查接口"""
     return {"status": "ok", "message": "GrayLink API is running"}
+
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时的初始化操作"""
+    # 创建数据库表
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    # 初始化默认用户
+    async for db in get_db():
+        await auth.init_default_user(db)
+        break
 
 if __name__ == "__main__":
     import uvicorn
