@@ -5,29 +5,29 @@ import yaml
 import os
 
 class GoogleDriveSettings(BaseModel):
-    client_id: str
-    client_secret: str
-    token_file: str
+    client_id: str = ""
+    client_secret: str = ""
+    token_file: str = "data/gdrive_token.json"
 
 class MonitorSettings(BaseModel):
     scan_interval: int = 300
-    google_drive: GoogleDriveSettings
+    google_drive: GoogleDriveSettings = GoogleDriveSettings()
 
 class SymlinkSettings(BaseModel):
-    source_dir: str
-    target_dir: str
+    source_dir: str = "/mnt/media/nastool"
+    target_dir: str = "/mnt/nastool-nfo"
     preserve_structure: bool = True
     backup_on_conflict: bool = True
 
 class EmbySettings(BaseModel):
-    host: str
-    api_key: str
+    host: str = "http://emby:8096"
+    api_key: str = ""
     auto_refresh: bool = True
     refresh_delay: int = 10
     path_mapping: Dict[str, str] = {}
 
 class DatabaseSettings(BaseModel):
-    url: str
+    url: str = "sqlite+aiosqlite:///data/graylink.db"
     pool_size: int = 20
     max_overflow: int = 10
     pool_timeout: int = 30
@@ -39,18 +39,36 @@ class Settings(BaseSettings):
     app_name: str = "GrayLink"
     debug: bool = False
     config_file: str = "config/config.yml"
-    monitor: MonitorSettings
-    symlink: SymlinkSettings
-    emby: EmbySettings
-    database: DatabaseSettings
+    monitor: MonitorSettings = MonitorSettings()
+    symlink: SymlinkSettings = SymlinkSettings()
+    emby: EmbySettings = EmbySettings()
+    database: DatabaseSettings = DatabaseSettings()
 
     @classmethod
     def load_config(cls):
         config_path = os.getenv("CONFIG_FILE", "config/config.yml")
+        
+        # 如果配置文件不存在，创建默认配置
         if not os.path.exists(config_path):
-            raise FileNotFoundError(f"Config file not found: {config_path}")
+            # 确保目录存在
+            os.makedirs(os.path.dirname(config_path), exist_ok=True)
             
-        with open(config_path, 'r') as f:
+            # 创建默认配置实例
+            default_config = cls()
+            
+            # 将默认配置保存到文件
+            with open(config_path, 'w', encoding='utf-8') as f:
+                yaml.safe_dump(
+                    default_config.model_dump(),
+                    f,
+                    allow_unicode=True,
+                    sort_keys=False
+                )
+            
+            return default_config
+            
+        # 如果配置文件存在，读取配置
+        with open(config_path, 'r', encoding='utf-8') as f:
             config_data = yaml.safe_load(f)
             
         return cls(**config_data)

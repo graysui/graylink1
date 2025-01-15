@@ -1,0 +1,32 @@
+app_name: "GrayLink"
+debug: true
+config_file: "config/config.yml"
+
+monitor:
+  scan_interval: 300
+  google_drive:
+    client_id: ""
+    client_secret: ""
+    token_file: "data/gdrive_token.json"
+
+symlink:
+  source_dir: "/mnt/media/nastool"
+  target_dir: "/mnt/nastool-nfo"
+  preserve_structure: true
+  backup_on_conflict: true
+
+emby:
+  host: "http://emby:8096"
+  api_key: ""
+  auto_refresh: true
+  refresh_delay: 10
+  path_mapping: {}
+
+database:
+  url: "sqlite+aiosqlite:///data/graylink.db"
+  pool_size: 20
+  max_overflow: 10
+  pool_timeout: 30
+  pool_recycle: 3600
+  echo: false
+  batch_size: 1000 

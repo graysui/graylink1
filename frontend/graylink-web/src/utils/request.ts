@@ -23,7 +23,7 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    const apiResponse = response.data as ApiResponse<unknown>
+    const apiResponse = response.data
     if (apiResponse.code !== 0) {
       throw new Error(apiResponse.message)
     }

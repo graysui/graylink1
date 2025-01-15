@@ -14,10 +14,14 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const login = async (form: LoginForm) => {
-    const { data } = await userApi.login(form)
-    token.value = data.token
-    username.value = data.username
-    userInfo.value = data.userInfo
+    const response = await userApi.login(form)
+    const tokenValue = response.data.token
+    token.value = tokenValue
+    username.value = response.data.username
+    userInfo.value = response.data.userInfo
+    if (tokenValue) {
+      localStorage.setItem('token', tokenValue)
+    }
   }
 
   const register = async (form: LoginForm) => {
@@ -28,6 +32,7 @@ export const useUserStore = defineStore('user', () => {
     token.value = null
     username.value = ''
     userInfo.value = null
+    localStorage.removeItem('token')
   }
 
   return {
@@ -40,4 +45,4 @@ export const useUserStore = defineStore('user', () => {
     register,
     logout
   }
-}) 
+})
