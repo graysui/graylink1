@@ -1,11 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { FileItem, FileOperations } from '@/types/file'
-import { fileApi } from '@/api/file'
+import type { FileRecord, ApiResponse, PaginatedResponse } from '@/types/api'
+import { request } from '@/utils/request'
+
+interface DirectoryTree {
+  tree: any[]
+}
+
+interface FileOperations {
+  operation: 'move' | 'copy' | 'delete'
+  paths: string[]
+  targetPath?: string
+}
 
 export const useFileStore = defineStore('file', () => {
   const currentPath = ref('')
-  const files = ref<FileItem[]>([])
+  const files = ref<FileRecord[]>([])
   const selectedFiles = ref<string[]>([])
   const sortBy = ref('name')
   const sortDesc = ref(false)
@@ -14,8 +24,8 @@ export const useFileStore = defineStore('file', () => {
   async function loadFiles(path: string) {
     loading.value = true
     try {
-      const response = await fileApi.getFiles(path)
-      files.value = response.data.items
+      const response = await request.get<PaginatedResponse<FileRecord>>(`/api/files?path=${encodeURIComponent(path)}`)
+      files.value = response.data.data.items
       currentPath.value = path
     } finally {
       loading.value = false
@@ -24,8 +34,8 @@ export const useFileStore = defineStore('file', () => {
 
   async function loadDirectoryTree() {
     try {
-      const response = await fileApi.getDirectoryTree()
-      return response.data.tree
+      const response = await request.get<ApiResponse<DirectoryTree>>('/api/files/tree')
+      return response.data.data.tree
     } catch (error) {
       console.error('Failed to load directory tree:', error)
       return []
@@ -36,8 +46,8 @@ export const useFileStore = defineStore('file', () => {
     sortBy.value = by
     sortDesc.value = desc
     files.value.sort((a, b) => {
-      const aValue = a[by as keyof FileItem]
-      const bValue = b[by as keyof FileItem]
+      const aValue = a[by as keyof FileRecord]
+      const bValue = b[by as keyof FileRecord]
 
       if (aValue === undefined && bValue === undefined) return 0
       if (aValue === undefined) return desc ? 1 : -1
@@ -49,10 +59,10 @@ export const useFileStore = defineStore('file', () => {
     })
   }
 
-  async function batchOperation(operation: FileOperations, paths: string[], targetPath?: string) {
+  async function batchOperation(operation: FileOperations) {
     loading.value = true
     try {
-      await fileApi.batchOperation({ operation, paths, targetPath })
+      await request.post<ApiResponse<void>>('/api/files/batch', operation)
       await loadFiles(currentPath.value)
     } finally {
       loading.value = false

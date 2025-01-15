@@ -39,15 +39,16 @@ import { monitorApi } from '@/api/monitor'
 import LocalMonitor from '@/components/monitor/LocalMonitor.vue'
 import DriveActivityMonitor from '@/components/monitor/DriveActivityMonitor.vue'
 import { useMonitorStore } from '@/stores/modules/monitor'
-import type { LogData, MonitorState } from '@/types/monitor'
+import type { LogData, MonitorStatus } from '@/types/api'
 
 const logs = ref<LogData[]>([])
 const loading = ref(false)
 const autoRefresh = ref(false)
-const stats = ref<MonitorState>({
-  status: 'stopped',
+const stats = ref<MonitorStatus>({
+  is_running: false,
   last_check: null,
-  interval: 0,
+  total_files: 0,
+  monitored_paths: [],
   stats: {
     total_files: 0,
     processed_files: 0,
@@ -55,9 +56,7 @@ const stats = ref<MonitorState>({
     error_count: 0,
     scan_speed: 0,
     estimated_time: 0
-  },
-  logs: [],
-  loading: false
+  }
 })
 
 const monitorStore = useMonitorStore()
@@ -66,12 +65,12 @@ const monitorStore = useMonitorStore()
 const loadLogs = async () => {
   try {
     loading.value = true
-    const { data } = await monitorApi.getLogs({ limit: 100 })
-    logs.value = data.data.map((item: any) => ({
-      timestamp: item.timestamp,
+    const response = await monitorApi.getLogs()
+    logs.value = response.data.data.map((item: any) => ({
+      timestamp: new Date(item.timestamp).getTime(),
       level: item.level,
       message: item.message,
-      time: new Date(item.timestamp).toISOString()
+      time: formatTime(item.timestamp)
     }))
   } catch (error) {
     ElMessage.error('加载日志失败')
@@ -122,10 +121,10 @@ const getLogType = (level: LogData['level']): 'primary' | 'warning' | 'danger' =
 
 const handleDataUpdate = (data: LogData[]) => {
   logs.value = data.map((item) => ({
-    timestamp: item.timestamp,
+    timestamp: new Date(item.timestamp).getTime(),
     level: item.level,
     message: item.message,
-    time: item.timestamp
+    time: formatTime(item.timestamp)
   }))
 }
 

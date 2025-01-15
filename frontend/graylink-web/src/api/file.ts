@@ -1,30 +1,30 @@
 import type { FileItem, FileOperations, FileApiResponse, BatchOperationParams } from '@/types/file'
-import type { ApiResponse } from '@/types/response'
-import { api } from '@/utils/request'
+import type { ApiResponse } from '@/types/api'
+import { request } from '@/utils/request'
 
 export const fileApi = {
   // 获取文件列表
   getFiles(path: string): Promise<ApiResponse<FileApiResponse>> {
-    return api.get('/file/list', { params: { path } })
+    return request.get('/api/file/list', { params: { path } })
   },
 
   // 获取文件快照
   getSnapshot(path: string): Promise<ApiResponse<FileItem[]>> {
-    return api.get('/monitor/snapshot', { params: { path } })
+    return request.get('/api/monitor/snapshot', { params: { path } })
   },
 
   // 批量操作
   batchOperation(params: BatchOperationParams): Promise<ApiResponse<void>> {
-    return api.post('/file/batch', params)
+    return request.post('/api/file/batch', params)
   },
 
   // 获取文件统计信息
   getStats(): Promise<ApiResponse<{ total: number, size: number }>> {
-    return api.get('/file/stats')
+    return request.get('/api/file/stats')
   },
 
   // 获取目录树结构
   getDirectoryTree(): Promise<ApiResponse<{ tree: FileItem[] }>> {
-    return api.get('/file/tree')
+    return request.get('/api/file/tree')
   }
 }

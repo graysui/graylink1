@@ -1,88 +1,35 @@
-# 类型系统重构任务清单
+根据分析，我们需要重点修改的文件有：
 
-## 1. 目录结构重组
-- [ ] 创建新的类型定义目录结构
-  ```
-  src/types/
-    ├── api/
-    ├── store/
-    ├── components/
-    ├── utils/
-    └── vendor/
-  ```
-- [ ] 迁移现有类型文件到新目录
-- [ ] 删除重复和过时的类型文件
+1. 类型定义文件：
+   ✅ /types/api.ts - 已更新，包含了所有需要的类型定义
+   ✅ /types/response.d.ts - 已合并到api.ts，暂时保留以防止类型错误
+   ✅ /types/monitor.ts 和 monitor.d.ts - 已合并到api.ts并删除
+   ✅ /types/symlink.ts - 已合并到api.ts并删除
+   ✅ /types/emby.ts - 已合并到api.ts并删除
 
-## 2. API 类型定义
-- [ ] 创建统一的请求/响应类型
-  - [ ] request.d.ts
-  - [ ] response.d.ts
-- [ ] 按模块拆分 API 类型定义
-  - [ ] auth.d.ts
-  - [ ] file.d.ts
-  - [ ] monitor.d.ts
-  - [ ] settings.d.ts
-- [ ] 确保与后端接口对齐
+2. Store模块：
+   ✅ /stores/modules/symlink.ts - API调用已更新
+   ✅ /stores/modules/emby.ts - API调用已更新
+   ✅ /stores/modules/monitor.ts - API调用已更新
+   ✅ /stores/modules/file.ts - 已更新API调用
+   ✅ /stores/modules/setting.ts - 已更新API调用
 
-## 3. Store 类型定义
-- [ ] 创建 Store 相关类型
-  - [ ] index.d.ts (根 store 类型)
-  - [ ] modules/file.d.ts
-  - [ ] modules/auth.d.ts
-  - [ ] modules/settings.d.ts
-- [ ] 完善状态管理类型检查
+3. API接口文件：
+   ✅ /api/emby.ts - 已更新
+   ✅ /api/gdrive.ts - 已更新
+   ✅ /api/setting.ts - 已更新
+   ✅ /api/symlink.ts - 已更新
+   ✅ /api/monitor.ts - 已更新
+   ✅ /api/file.ts - 已更新API调用
+   ✅ /api/user.ts - 已更新
 
-## 4. 工具类型定义
-- [ ] 整理工具函数类型
-  - [ ] auth.d.ts
-  - [ ] request.d.ts
-  - [ ] time.d.ts
-  - [ ] format.d.ts
-- [ ] 添加必要的类型注释
+4. 遇到的问题：
+   - pinia 类型定义问题需要解决
+   - store 的状态类型定义需要修复
+   - 部分类型文件的合并需要谨慎处理，确保不破坏现有功能
 
-## 5. 第三方库类型声明
-- [ ] Element Plus 类型声明
-  - [ ] 补充中文语言包类型
-  - [ ] 确保组件类型完整
-- [ ] 其他依赖类型检查
-
-## 6. 代码重构
-- [ ] 修改类型导入语句
-  - [ ] 使用 type 关键字
-  - [ ] 更新导入路径
-- [ ] 完善空值检查
-  - [ ] 文件排序函数
-  - [ ] API 响应处理
-- [ ] 修复类型错误
-  - [ ] AuthError 相关
-  - [ ] FileOperations 相关
-  - [ ] MonitorState 相关
-
-## 7. 配置更新
-- [ ] 更新 tsconfig.json
-  - [ ] 检查 paths 配置
-  - [ ] 确认编译选项
-- [ ] 创建 .npmrc
-  - [ ] 设置依赖版本规则
-  - [ ] 配置 registry
-
-## 8. 文档完善
-- [ ] 更新 README.md
-  - [ ] 补充类型系统说明
-  - [ ] 添加开发规范
-- [ ] 添加类型定义指南
-- [ ] 编写代码示例
-
-## 9. 测试与验证
-- [ ] 运行类型检查
-  - [ ] 确保无编译错误
-  - [ ] 验证类型推导
-- [ ] 测试功能完整性
-  - [ ] API 调用
-  - [ ] 状态管理
-  - [ ] 组件渲染
-
-## 10. 持续集成
-- [ ] 添加类型检查到 CI 流程
-- [ ] 设置提交前检查钩子
-- [ ] 自动化测试集成 
+下一步计划：
+1. 解决 pinia 的类型问题
+2. 修复 store 模块的类型错误
+3. 完成剩余 API 接口的更新
+4. 最后再处理类型文件的合并

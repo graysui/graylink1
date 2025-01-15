@@ -1,4 +1,5 @@
 {
+  "extends": "@tsconfig/node18/tsconfig.json",
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
@@ -16,24 +17,18 @@
       "@/*": ["./src/*"]
     },
     "lib": ["esnext", "dom", "dom.iterable", "scripthost"],
-    "typeRoots": [
-      "./types",
-      "./node_modules/@types"
-    ],
-    "types": [
-      "node",
-      "element-plus/global"
-    ],
-    "verbatimModuleSyntax": true
+    "types": ["node", "vue", "pinia", "element-plus/global"]
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "types/**/*.d.ts"
+    "src/types/**/*.d.ts"
   ],
-  "exclude": [
-    "node_modules"
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
   ]
 }

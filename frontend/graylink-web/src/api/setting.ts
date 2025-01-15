@@ -1,19 +1,16 @@
 import { request } from '@/utils/request'
-
-export interface SettingForm {
-  monitorPath: string
-  embyServer: string
-  embyApiKey: string
-  gdriveClientId: string
-  gdriveClientSecret: string
-}
+import type { ApiResponse, SystemSettings } from '@/types/api'
 
 export const settingApi = {
-  updateSettings(data: SettingForm) {
-    return request.post('/api/setting', data)
+  getSettings(): Promise<ApiResponse<SystemSettings>> {
+    return request.get('/api/settings')
   },
 
-  resetSettings() {
-    return request.post('/api/setting/reset')
+  updateSettings(data: SystemSettings): Promise<ApiResponse<void>> {
+    return request.post('/api/settings', data)
+  },
+
+  resetSettings(): Promise<ApiResponse<void>> {
+    return request.post('/api/settings/reset')
   }
 }

@@ -158,8 +158,8 @@ import { useSymlinkStore } from '@/stores/modules/symlink'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ProgressBar from '@/components/common/ProgressBar.vue'
 import { useIntervalFn } from '@/composables/useIntervalFn'
-import type { VerifyResult } from '@/types/symlink'
 import { showSuccess, showError } from '@/utils/message'
+import type { SymlinkState } from '@/types/api'
 
 defineOptions({
   name: 'SymlinkManagerPage'
@@ -343,6 +343,9 @@ const icons = {
 const createSymlink = async (data: { source: string; target: string }) => {
   await symlinkStore.createSymlink(data)
 }
+
+// 使用 SymlinkState 中的 verifyResult 类型
+type VerifyResult = NonNullable<SymlinkState['verifyResult']>
 </script>
 
 <style scoped lang="scss">

@@ -1,15 +1,24 @@
 import { defineStore } from 'pinia'
-import { api } from '@/utils/request'
-import type { VerifyResult, SymlinkState } from '@/types/symlink'
-import type { ApiResponse } from '@/types/response'
+import { request } from '@/utils/request'
+import type { ApiResponse, SymlinkState } from '@/types/api'
+
+interface State {
+  symlinks: {
+    value: any[]
+  }
+  verifying: boolean
+  verifyResult: SymlinkState
+  loading: boolean
+}
 
 export const useSymlinkStore = defineStore('symlink', {
-  state: (): SymlinkState => ({
+  state: (): State => ({
     symlinks: {
       value: []
     },
     verifying: false,
     verifyResult: {
+      total: 0,
       valid: 0,
       invalid: 0,
       missing: 0
@@ -21,7 +30,7 @@ export const useSymlinkStore = defineStore('symlink', {
     async verifySymlinks() {
       this.verifying = true
       try {
-        const response = await api.get<ApiResponse<VerifyResult>>('/api/symlinks/verify')
+        const response = await request.get<ApiResponse<SymlinkState>>('/api/symlink/verify')
         this.verifyResult = response.data.data
       } finally {
         this.verifying = false
@@ -31,7 +40,7 @@ export const useSymlinkStore = defineStore('symlink', {
     async createSymlink(data: { source: string; target: string }) {
       this.loading = true
       try {
-        await api.post<ApiResponse<void>>('/api/symlinks', { path: data.source })
+        await request.post<ApiResponse<void>>('/api/symlink', data)
         await this.verifySymlinks()
       } finally {
         this.loading = false
@@ -41,7 +50,7 @@ export const useSymlinkStore = defineStore('symlink', {
     async removeSymlink(path: string) {
       this.loading = true
       try {
-        await api.delete<ApiResponse<void>>(`/api/symlinks/${encodeURIComponent(path)}`)
+        await request.delete<ApiResponse<void>>(`/api/symlink/${encodeURIComponent(path)}`)
         await this.verifySymlinks()
       } finally {
         this.loading = false
@@ -51,7 +60,7 @@ export const useSymlinkStore = defineStore('symlink', {
     async clearSymlinks() {
       this.loading = true
       try {
-        await api.delete<ApiResponse<void>>('/api/symlinks')
+        await request.delete<ApiResponse<void>>('/api/symlink')
         await this.verifySymlinks()
       } finally {
         this.loading = false
@@ -61,7 +70,7 @@ export const useSymlinkStore = defineStore('symlink', {
     async rebuildSymlinks() {
       this.loading = true
       try {
-        const response = await api.post<ApiResponse<VerifyResult>>('/api/symlinks/rebuild')
+        const response = await request.post<ApiResponse<SymlinkState>>('/api/symlink/rebuild')
         return response.data.data
       } finally {
         this.loading = false

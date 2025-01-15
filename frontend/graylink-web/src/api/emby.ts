@@ -1,35 +1,29 @@
-import { api } from '@/utils/request'
-import type { EmbyLibrary, EmbyStatus } from '@/types/emby'
-import type { ApiResponse } from '@/types/response'
+import type { ApiResponse, EmbyStatus } from '@/types/api'
+import { request } from '@/utils/request'
 
 export const embyApi = {
-  // 检查服务器状态
-  checkStatus() {
-    return api.get<ApiResponse<EmbyStatus>>('/emby/status')
+  // 检查Emby服务器状态
+  checkStatus(): Promise<ApiResponse<EmbyStatus>> {
+    return request.get('/api/emby/status')
   },
 
   // 获取媒体库列表
-  getLibraries() {
-    return api.get<ApiResponse<EmbyLibrary[]>>('/emby/libraries')
+  getLibraries(): Promise<ApiResponse<string[]>> {
+    return request.get('/api/emby/libraries')
   },
 
-  // 按路径刷新媒体库
-  refreshByPaths(paths: string[]) {
-    return api.post<ApiResponse<void>>('/emby/refresh', { paths })
+  // 刷新指定路径的媒体库
+  refreshByPaths(paths: string[]): Promise<ApiResponse<void>> {
+    return request.post('/api/emby/refresh', { paths })
   },
 
-  // 刷新整个媒体库
-  refreshRoot() {
-    return api.post<ApiResponse<void>>('/emby/refresh/root')
+  // 刷新根目录
+  refreshRoot(): Promise<ApiResponse<void>> {
+    return request.post('/api/emby/refresh/root')
   },
 
-  // 测试连接
-  test() {
-    return api.post<ApiResponse<void>>('/emby/test')
-  },
-
-  // 刷新媒体库
-  refreshLibrary() {
-    return api.post<ApiResponse<void>>('/emby/refresh')
+  // 测试Emby连接
+  test(server: string, apiKey: string): Promise<ApiResponse<EmbyStatus>> {
+    return request.post('/api/emby/test', { server, api_key: apiKey })
   }
 }

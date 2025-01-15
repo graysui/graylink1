@@ -51,17 +51,19 @@
 import { ref, computed } from 'vue'
 import type { ProgressProps } from 'element-plus'
 import { useEmbyStore } from '@/stores/modules/emby'
-import type { EmbyLibrary, EmbyStatus } from '@/types/emby'
+import type { EmbyLibrary, EmbyStatus } from '@/types/api'
 
 const embyStore = useEmbyStore()
 
 // 修复状态定义
 const serverStatus = ref<EmbyStatus>({
+  connected: false,
+  version: null,
+  server_name: null,
   serverStatus: 'disconnected',
   apiStatus: false,
-  version: undefined,
-  lastCheck: undefined,
-  lastUpdate: undefined
+  lastCheck: null,
+  lastUpdate: null
 })
 
 // 删除重复声明，使用computed
@@ -76,7 +78,7 @@ const getProgressStatus = (progress: number): ProgressProps['status'] => {
 }
 
 // 格式化时间
-const formatDateTime = (time?: string) => {
+const formatDateTime = (time?: string | null) => {
   if (!time) return '未知'
   return new Date(time).toLocaleString()
 }
@@ -90,7 +92,7 @@ const totalItems = computed(() => {
 const lastUpdateTime = computed(() => {
   const times = libraryList.value
     .map((lib) => lib.lastUpdate)
-    .filter((t): t is string => t !== undefined)
+    .filter((t): t is string => t !== undefined && t !== null)
   if (!times.length) return '未知'
   return formatDateTime(new Date(Math.max(...times.map(t => new Date(t).getTime()))).toISOString())
 })

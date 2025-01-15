@@ -1,33 +1,34 @@
-import { api } from '@/utils/request'
-import type { ApiResponse, ActivityResult, DriveActivity } from '@/types/api'
+import type { ApiResponse, ActivityResult } from '@/types/api'
+import { request } from '@/utils/request'
 
 export const gdriveApi = {
-  // 获取授权 URL
-  getAuthUrl() {
-    return api.get<ApiResponse<{ auth_url: string }>>('/gdrive/auth-url')
+  // 获取授权URL
+  getAuthUrl(): Promise<ApiResponse<string>> {
+    return request.get('/api/gdrive/auth/url')
   },
 
-  // 开始设备授权流程
-  startAuth() {
-    return api.post<ApiResponse<{
-      user_code: string
-      verification_url: string
-      device_code: string
-      expires_in: number
-    }>>('/gdrive/start-auth')
+  // 开始授权
+  startAuth(code: string): Promise<ApiResponse<void>> {
+    return request.post('/api/gdrive/auth/start', { code })
   },
 
   // 检查授权状态
-  checkAuth(device_code: string) {
-    return api.post<ApiResponse<{ status: string }>>('/gdrive/check-auth', { device_code })
+  checkAuth(): Promise<ApiResponse<boolean>> {
+    return request.get('/api/gdrive/auth/check')
   },
 
-  checkActivities() {
-    return api.get<ApiResponse<ActivityResult>>('/gdrive/check-activities')
+  // 检查活动
+  checkActivities(pageToken?: string): Promise<ApiResponse<ActivityResult>> {
+    return request.get('/api/gdrive/activities', {
+      params: { page_token: pageToken }
+    })
   },
 
-  // 测试连接
-  test() {
-    return api.get<ApiResponse<void>>('/gdrive/test')
+  // 测试配置
+  test(clientId: string, clientSecret: string): Promise<ApiResponse<void>> {
+    return request.post('/api/gdrive/test', {
+      client_id: clientId,
+      client_secret: clientSecret
+    })
   }
 }

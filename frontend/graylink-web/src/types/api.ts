@@ -1,127 +1,68 @@
 // 基础响应类型
 export interface ApiResponse<T> {
+  code: number
   data: T
-  status: string
   message?: string
+  status?: string
 }
 
-export interface PaginationData<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-}
-
-export interface PaginatedResponse<T> extends Omit<ApiResponse<any>, 'data'> {
-  data: PaginationData<T>
-}
-
+// 错误响应类型
 export interface ErrorResponse {
   error: string
   message: string
   status: number
 }
 
-// FileRecord 类型定义
+// 分页数据类型
+export interface PaginationData<T> {
+  items: T[]
+  total: number
+  page: number
+  page_size: number
+}
+
+// 分页响应类型
+export interface PaginatedResponse<T> extends Omit<ApiResponse<any>, 'data'> {
+  data: PaginationData<T>
+}
+
+// 扩展 axios 类型
+declare module 'axios' {
+  export interface AxiosResponse<T = any> {
+    data: ApiResponse<T>
+    status: number
+    statusText: string
+    headers: Record<string, string>
+    config: AxiosRequestConfig
+  }
+}
+
+// 文件记录类型
 export interface FileRecord {
-  id: string
   name: string
   path: string
+  type: 'file' | 'directory'
   size: number
-  type: string
-  modified_time: string
-  is_directory: boolean
-  parent_id?: string
-  children?: FileRecord[]
-  meta?: Record<string, any>
+  modified: string
+  extension?: string
 }
 
-// DatabaseStats 类型定义
-export interface DatabaseStats {
-  total_size: number
-  file_count: number
-  database: {
-    total_size: number
-    index_size: number
-    table_count: number
-  }
-  performance: {
-    slow_queries: Array<{
-      query: string
-      duration: number
-      timestamp: string
-    }>
-    query_stats: {
-      total: number
-      slow: number
-      average_duration: number
-    }
-  }
+// 日志数据类型
+export interface LogData {
+  timestamp: number
+  time: string
+  level: 'info' | 'warning' | 'error'
+  message: string
 }
 
-// Settings 相关类型定义
-export interface BasicSettings {
-  scan_interval: number
-  batch_size: number
-  max_retries: number
-  auto_cleanup: boolean
-  cleanup_threshold: number
-}
-
-export interface PathConfig {
-  id: string
-  path: string
-  type: 'source' | 'target'
-  enabled: boolean
-  priority: number
-  filters?: string[]
-}
-
-export interface ScheduleSettings {
-  enabled: boolean
-  cron: string
-  tasks: Array<{
-    type: 'scan' | 'cleanup' | 'optimize'
-    enabled: boolean
-    params?: Record<string, any>
-  }>
-}
-
-export interface Settings {
-  basic: BasicSettings
-  paths: PathConfig[]
-  schedule: ScheduleSettings
-}
-
-// SymlinkResult 类型定义
-export interface SymlinkResult {
-  success: boolean
-  source: string
-  target: string
-  error?: string
-  created_time?: string
-  status: 'valid' | 'broken' | 'missing'
-}
-
-// 导出其他必要的类型
-export interface FileInfo {
-  id: string
-  name: string
-  path: string
-  size: number
-  type: string
-  modified_time: string
-  is_directory: boolean
-  preview_url?: string
-  download_url?: string
-  meta?: Record<string, any>
-}
-
+// 监控状态类型
 export interface MonitorStatus {
-  status: 'running' | 'stopped'
+  is_running: boolean
   last_check: string | null
-  interval: number
-  stats: {
+  total_files: number
+  monitored_paths: string[]
+  interval?: number
+  stats?: {
     total_files: number
     processed_files: number
     pending_files: number
@@ -130,175 +71,99 @@ export interface MonitorStatus {
     scan_speed?: number
     estimated_time?: number
   }
+  logs?: LogData[]
 }
 
+// Emby类型定义
 export interface EmbyLibrary {
   id: string
   name: string
   path: string
   type: string
-  itemCount: number
+  itemCount?: number
   lastUpdate?: string
-}
-
-// 添加 UserInfo 类型定义
-export interface UserInfo {
-  id: number
-  username: string
-  email: string
-  avatar?: string
-  roles: string[]
-  permissions: string[]
-  settings?: Record<string, any>
-  created_at: string
-  updated_at: string
-}
-
-// 添加 SystemSettings 类型定义
-export interface SystemSettings {
-  monitor: {
-    interval: number
-    batch_size: number
-    max_retries: number
-    google_drive: {
-      enabled: boolean
-      client_id: string
-      client_secret: string
-      token_file: string
-      watch_folder_id: string
-      check_interval: string
-      path_mapping: Record<string, string>
-    }
-  }
-  symlink: {
-    source_dir: string
-    target_dir: string
-    preserve_structure: boolean
-    backup_on_conflict: boolean
-    conflict_strategy: string
-  }
-  emby: {
-    host: string
-    api_key: string
-    auto_refresh: boolean
-    refresh_delay: number
-    path_mapping: Record<string, string>
-  }
-  security: {
-    max_login_attempts: number
-    session_timeout: number
-    password_policy: {
-      min_length: number
-      require_special: boolean
-      require_numbers: boolean
-    }
-  }
-  account: {
-    username: string
-    email: string
-    password: string
-    confirm_password: string
-  }
-}
-
-import type { VerifyResult } from './symlink'
-export type { VerifyResult }
-
-// 修改 SymlinkStore 的类型
-export interface SymlinkStore {
-  verifyResult: VerifyResult | null
-  loading: boolean
-  verifySymlinks: () => Promise<void>
-  createSymlink: (path: string) => Promise<void>
-  removeSymlink: (path: string) => Promise<void>
-  rebuildSymlinks: () => Promise<void>
-  clearSymlinks: () => Promise<void>
+  refreshing?: boolean
 }
 
 export interface EmbyStatus {
-  serverStatus: 'connected' | 'disconnected'
-  apiStatus: boolean
-  version?: string
+  connected: boolean
+  version: string | null
+  server_name: string | null
+  serverStatus?: 'connected' | 'disconnected'
+  apiStatus?: boolean
   lastCheck?: string
+  lastUpdate?: string
 }
 
-export interface RcloneConfig {
-  config_file: string
-  remote_name: string
-  mount_point: string
-  mount_options: Record<string, string>
-  auto_mount: boolean
+export interface EmbyState {
+  status: EmbyStatus
+  libraries: EmbyLibrary[]
+  refreshProgress: Record<string, number>
 }
 
-export interface GoogleDriveConfig {
-  client_id: string
-  client_secret: string
-  token_file: string
-  refresh_token?: string
-  watch_folder_id: string
-  enabled: boolean
-  check_interval: string
-  path_mapping: Record<string, string>
-}
-
-export interface MonitorConfig {
-  interval: number
-  batch_size: number
-  max_retries: number
-  google_drive: GoogleDriveConfig
-  rclone: RcloneConfig
-}
-
-export interface UserInfo {
-  username: string
-  email: string
-}
-
-export interface ChangePasswordParams {
-  new_password: string
-}
-
-// 添加 Google Drive 相关类型定义
+// Google Drive活动类型
 export interface DriveActivity {
-  action_type: 'create' | 'edit' | 'move'
+  id?: string
   time: string
-  file: {
-    id: string
-    title: string
-    path: string
-    mime_type: string
-  }
-}
-
-export interface DriveMonitorStatus {
-  enabled: boolean
-  check_interval: string
-  last_check: string | null
-  folder_name: string
-  stats: {
-    total_activities: number
-    processed_files: number
-    error_count: number
-  }
+  type?: string
+  action?: string
+  actorEmail?: string
+  targetName?: string
+  targetId?: string
+  file_name?: string
+  file_id?: string
 }
 
 export interface ActivityResult {
-  activities: number
-  processed: number
+  activities: DriveActivity[]
+  next_page_token?: string
+  processed?: number
+  items?: DriveActivity[]
 }
 
-// 添加 DirListItem 类型定义
-export interface DirListItem {
-  name: string
-  isDir: boolean
-  path: string
-  size?: number
-  modTime?: string
+// 软链接类型定义
+export interface Symlink {
+  id: string
+  source: string
+  target: string
+  status: 'valid' | 'invalid' | 'missing'
+  lastCheck?: string
 }
 
-// 添加 MonitorLog 类型定义
-export interface MonitorLog {
-  time: string
-  level: 'error' | 'warning' | 'info'
-  message: string
+export interface SymlinkState {
+  total: number
+  valid: number
+  invalid: number
+  missing: number
+  symlinks?: {
+    value: Symlink[]
+  }
+  verifying?: boolean
+  verifyResult?: {
+    valid: number
+    invalid: number
+    missing: number
+  }
+  loading?: boolean
+}
+
+// 系统设置类型
+export interface SystemSettings {
+  monitor_paths: string[]
+  emby_server?: string
+  emby_api_key?: string
+  gdrive_client_id?: string
+  gdrive_client_secret?: string
+}
+
+// 用户相关类型
+export interface LoginForm {
+  username: string
+  password: string
+}
+
+export interface UserProfile {
+  username: string
+  created_at: string
+  updated_at: string
 }
