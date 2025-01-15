@@ -1,16 +1,16 @@
 # FastAPI框架及其依赖
-fastapi>=0.104.0
-uvicorn>=0.24.0
-python-multipart>=0.0.6
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
+fastapi>=0.68.0,<0.69.0
+uvicorn>=0.15.0,<0.16.0
+python-multipart>=0.0.5,<0.0.6
+python-jose[cryptography]>=3.3.0,<3.4.0
+passlib[bcrypt]>=1.7.4,<1.8.0
 
 # 数据库
-sqlalchemy>=2.0.23
-aiosqlite>=0.19.0
+sqlalchemy>=1.4.0,<1.5.0
+aiosqlite>=0.17.0
 
 # Google Drive API
-google-api-python-client>=2.108.0
+google-api-python-client>=2.0.0
 google-auth-httplib2>=0.1.1
 google-auth-oauthlib>=1.1.0
 
@@ -19,12 +19,15 @@ aiohttp>=3.9.1
 
 # 工具库
 python-dotenv>=1.0.0
-pydantic>=2.4.2
+pydantic>=1.8.0,<2.0.0
 pydantic-settings>=2.0.3
-loguru>=0.7.2
+loguru>=0.6.0
 pyyaml>=6.0.1
 
 # 测试
 pytest>=7.4.3
 pytest-asyncio>=0.21.1
-httpx>=0.25.1 
+httpx>=0.25.1
+
+# 添加认证相关的依赖
+aiofiles>=0.8.0 
