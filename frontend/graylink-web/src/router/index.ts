@@ -3,6 +3,12 @@ import type { Router, RouteRecordRaw, RouteLocationRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   {
+    path: '/',
+    name: 'Root',
+    component: () => import('@/views/file/index.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/login/index.vue'),
@@ -36,8 +42,15 @@ const router = createRouter({
 }
 
 router.beforeEach((to, from, next) => {
-  if (to.path === '/') {
-    next({ path: '/login' })
+  const token = localStorage.getItem('token')
+
+  if (to.meta.requiresAuth && !token) {
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    })
+  } else if (to.path === '/login' && token) {
+    next({ path: '/file' })
   } else {
     next()
   }
