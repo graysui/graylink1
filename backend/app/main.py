@@ -1,11 +1,18 @@
 from fastapi import FastAPI
-from handlers import setting, file, gdrive, emby, symlink
+from handlers import setting, file, gdrive, emby, symlink, monitor
 from fastapi.middleware.cors import CORSMiddleware
 from middleware.config import config_middleware
 import logging
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 启动时的操作
+    yield
+    # 关闭时的操作
+
+app = FastAPI(lifespan=lifespan)
 
 # 配置CORS
 app.add_middleware(
@@ -25,6 +32,7 @@ app.include_router(file.router, prefix="/api", tags=["files"])
 app.include_router(gdrive.router, prefix="/api", tags=["gdrive"])
 app.include_router(emby.router, prefix="/api", tags=["emby"])
 app.include_router(symlink.router, prefix="/api", tags=["symlink"])
+app.include_router(monitor.router, prefix="/api", tags=["monitor"])
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
