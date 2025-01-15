@@ -5,23 +5,28 @@
     :collapse="isCollapse"
     router
   >
-    <el-menu-item index="/">
+    <el-menu-item index="/monitor">
       <el-icon><Monitor /></el-icon>
       <template #title>监控中心</template>
     </el-menu-item>
 
-    <el-menu-item index="/emby">
-      <el-icon><VideoPlay /></el-icon>
-      <template #title>Emby管理</template>
+    <el-menu-item index="/file">
+      <el-icon><FolderOpened /></el-icon>
+      <template #title>文件管理</template>
     </el-menu-item>
 
     <el-menu-item index="/symlink">
-      <el-icon><Link /></el-icon>
+      <el-icon><Connection /></el-icon>
       <template #title>软链接管理</template>
     </el-menu-item>
 
+    <el-menu-item index="/emby">
+      <el-icon><VideoCamera /></el-icon>
+      <template #title>Emby管理</template>
+    </el-menu-item>
+
     <el-menu-item index="/setting">
-      <el-icon><Setting /></el-icon>
+      <el-icon><Tools /></el-icon>
       <template #title>系统设置</template>
     </el-menu-item>
   </el-menu>
@@ -31,8 +36,11 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  Fold,
-  ArrowDown
+  Monitor,
+  FolderOpened,
+  Connection,
+  VideoCamera,
+  Tools
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -52,4 +60,4 @@ defineProps<{
 .sidebar-menu:not(.el-menu--collapse) {
   width: 200px;
 }
-</style> 
+</style>

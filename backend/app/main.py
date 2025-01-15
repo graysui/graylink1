@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from handlers import setting, file
+from handlers import setting, file, gdrive, emby, symlink
 from fastapi.middleware.cors import CORSMiddleware
 from middleware.config import config_middleware
 import logging
@@ -10,7 +10,7 @@ app = FastAPI()
 # 配置CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -22,6 +22,9 @@ app.middleware("http")(config_middleware)
 # 注册路由
 app.include_router(setting.router, prefix="/api", tags=["settings"])
 app.include_router(file.router, prefix="/api", tags=["files"])
+app.include_router(gdrive.router, prefix="/api", tags=["gdrive"])
+app.include_router(emby.router, prefix="/api", tags=["emby"])
+app.include_router(symlink.router, prefix="/api", tags=["symlink"])
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

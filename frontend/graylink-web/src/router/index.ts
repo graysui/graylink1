@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Root',
-    component: () => import('@/views/file/index.vue'),
+    component: () => import('@/views/monitor/index.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -15,15 +15,33 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/monitor',
+    name: 'Monitor',
+    component: () => import('@/views/monitor/index.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/file',
     name: 'File',
     component: () => import('@/views/file/index.vue'),
     meta: { requiresAuth: true }
   },
   {
+    path: '/symlink',
+    name: 'Symlink',
+    component: () => import('@/views/symlink/index.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/emby',
     name: 'Emby',
     component: () => import('@/views/emby/index.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/setting',
+    name: 'Setting',
+    component: () => import('@/views/setting/index.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -50,7 +68,7 @@ router.beforeEach((to, from, next) => {
       query: { redirect: to.fullPath }
     })
   } else if (to.path === '/login' && token) {
-    next({ path: '/file' })
+    next({ path: '/monitor' })
   } else {
     next()
   }
