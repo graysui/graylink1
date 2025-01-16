@@ -79,7 +79,7 @@ class AuthManager:
                 self._failed_auth_attempts += 1
                 return None
                 
-            if not self.verify_password(password, user.hashed_password):
+            if not self.verify_password(password, user.password):
                 self._failed_auth_attempts += 1
                 return None
                 
