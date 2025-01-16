@@ -80,6 +80,11 @@ async def startup():
         
         # 初始化认证管理器
         auth_manager = AuthManager.get_instance()
+
+        # 初始化默认用户
+        async with AsyncSessionLocal() as db:
+            from app.handlers.auth import init_default_user
+            await init_default_user(db)
             
         logger.info("应用初始化完成")
         
