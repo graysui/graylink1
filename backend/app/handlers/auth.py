@@ -11,6 +11,8 @@ from app.core.auth import (
     oauth2_scheme
 )
 from typing import Optional
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 
@@ -30,9 +32,14 @@ async def get_current_user(
 
 async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User]:
     """根据用户名获取用户"""
-    stmt = User.__table__.select().where(User.username == username)
+    stmt = (
+        select(User)
+        .where(User.username == username)
+        .options(selectinload('*'))
+    )
+    
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()
+    return result.unique().scalar_one_or_none()
 
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> Optional[User]:
     """验证用户"""

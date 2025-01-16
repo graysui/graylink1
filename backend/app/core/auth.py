@@ -10,11 +10,18 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.core.config import settings
 from app.models.user import User
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# 配置密码上下文
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+    bcrypt__ident="2b"
+)
 
 class AuthError(Exception):
     """认证错误"""
@@ -170,10 +177,14 @@ class AuthManager:
             用户或 None
         """
         try:
-            result = await db.execute(
-                User.__table__.select().where(User.username == username)
+            from sqlalchemy.orm import selectinload
+            stmt = (
+                select(User)
+                .where(User.username == username)
+                .options(selectinload('*'))
             )
-            return result.scalar_one_or_none()
+            result = await db.execute(stmt)
+            return result.unique().scalar_one_or_none()
             
         except Exception as e:
             self._last_error = str(e)
