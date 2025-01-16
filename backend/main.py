@@ -58,11 +58,11 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(auth.router, prefix="/api", tags=["认证"])
-app.include_router(monitor.router, prefix="/api/monitor", tags=["监控"])
-app.include_router(file.router, prefix="/api/file", tags=["文件"])
-app.include_router(symlink.router, prefix="/api/symlink", tags=["符号链接"])
-app.include_router(emby.router, prefix="/api/emby", tags=["Emby"])
-app.include_router(gdrive.router, prefix="/api/gdrive", tags=["Google Drive"])
+app.include_router(monitor.router, prefix="/api", tags=["监控"])
+app.include_router(file.router, prefix="/api", tags=["文件"])
+app.include_router(symlink.router, prefix="/api", tags=["符号链接"])
+app.include_router(emby.router, prefix="/api", tags=["Emby"])
+app.include_router(gdrive.router, prefix="/api", tags=["Google Drive"])
 
 @app.on_event("startup")
 async def startup():

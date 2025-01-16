@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from app.utils.emby import EmbyClient
 from app.utils.config import get_config
 
-router = APIRouter(prefix="/emby", tags=["emby"])
+router = APIRouter(tags=["emby"])
 
 class EmbyStatus(BaseModel):
     connected: bool

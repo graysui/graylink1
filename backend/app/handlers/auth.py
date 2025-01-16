@@ -42,7 +42,7 @@ async def authenticate_user(db: AsyncSession, username: str, password: str) -> O
         return None
     return user
 
-@router.post("/login")
+@router.post("/auth/login")
 async def login(form_data: UserLogin, db: AsyncSession = Depends(get_db)):
     """用户登录"""
     user = await authenticate_user(db, form_data.username, form_data.password)
@@ -60,7 +60,7 @@ async def login(form_data: UserLogin, db: AsyncSession = Depends(get_db)):
         "token": access_token
     }
 
-@router.post("/register")
+@router.post("/auth/register")
 async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     """用户注册"""
     # 检查用户名是否已存在
@@ -85,7 +85,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
         "message": "注册成功"
     }
 
-@router.post("/logout")
+@router.post("/auth/logout")
 async def logout():
     """用户登出"""
     return {
@@ -94,7 +94,7 @@ async def logout():
         "message": "登出成功"
     }
 
-@router.get("/profile")
+@router.get("/auth/profile")
 async def get_profile(current_user: User = Depends(get_current_user)):
     """获取用户信息"""
     return {
@@ -108,7 +108,7 @@ async def get_profile(current_user: User = Depends(get_current_user)):
         "message": "获取成功"
     }
 
-@router.post("/profile")
+@router.post("/auth/profile")
 async def update_profile(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
@@ -151,3 +151,59 @@ async def init_default_user(db: AsyncSession):
     )
     db.add(default_user)
     await db.commit() 
+
+@router.get("/menu")
+async def get_menu(current_user: User = Depends(get_current_user)):
+    """获取菜单配置"""
+    # 基础菜单项
+    menu = [
+        {
+            "path": "/monitor",
+            "name": "monitor",
+            "meta": {
+                "title": "监控",
+                "icon": "monitor"
+            }
+        },
+        {
+            "path": "/file",
+            "name": "file",
+            "meta": {
+                "title": "文件",
+                "icon": "folder"
+            }
+        },
+        {
+            "path": "/symlink",
+            "name": "symlink",
+            "meta": {
+                "title": "软链接",
+                "icon": "link"
+            }
+        },
+        {
+            "path": "/emby",
+            "name": "emby",
+            "meta": {
+                "title": "Emby",
+                "icon": "video"
+            }
+        }
+    ]
+    
+    # 如果是管理员，添加管理菜单
+    if current_user.role == "admin":
+        menu.append({
+            "path": "/settings",
+            "name": "settings",
+            "meta": {
+                "title": "设置",
+                "icon": "setting"
+            }
+        })
+    
+    return {
+        "code": 0,
+        "data": menu,
+        "message": "获取成功"
+    } 

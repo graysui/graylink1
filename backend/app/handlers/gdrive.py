@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from app.utils.config import get_config
 from app.models.config import DriveConfig
 
-router = APIRouter(prefix="/gdrive", tags=["gdrive"])
+router = APIRouter(tags=["gdrive"])
 
 class DriveActivity(BaseModel):
     time: str

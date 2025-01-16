@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from app.utils.config import get_config
 
-router = APIRouter(prefix="/monitor", tags=["monitor"])
+router = APIRouter(tags=["monitor"])
 
 class MonitorState(BaseModel):
     is_running: bool
@@ -11,7 +11,7 @@ class MonitorState(BaseModel):
     total_files: int = 0
     monitored_paths: List[str] = []
 
-@router.get("/status")
+@router.get("/monitor/status")
 async def get_status():
     return {
         "code": 0,
@@ -23,7 +23,7 @@ async def get_status():
         }
     }
 
-@router.get("/logs")
+@router.get("/monitor/logs")
 async def get_logs(limit: int = 100):
     return {
         "code": 0,
@@ -32,28 +32,28 @@ async def get_logs(limit: int = 100):
         }
     }
 
-@router.post("/start")
+@router.post("/monitor/start")
 async def start_monitor():
     return {
         "code": 0,
         "data": None
     }
 
-@router.post("/stop")
+@router.post("/monitor/stop")
 async def stop_monitor():
     return {
         "code": 0,
         "data": None
     }
 
-@router.post("/logs/clear")
+@router.post("/monitor/logs/clear")
 async def clear_logs():
     return {
         "code": 0,
         "data": None
     }
 
-@router.get("/stats")
+@router.get("/monitor/stats")
 async def get_stats():
     return {
         "code": 0,
