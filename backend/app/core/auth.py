@@ -16,6 +16,8 @@ from app.core.database import get_db
 from app.core.session import session_manager
 from app.models.user import User
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 class AuthError(Exception):
     """认证错误"""
     pass
