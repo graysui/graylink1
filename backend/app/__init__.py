@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from loguru import logger
 
 from app.core.config import settings
-from app.core.cache import cleanup_cache, default_cache
+from app.core.cache import default_cache
 
 def create_app() -> FastAPI:
     """创建并配置 FastAPI 应用实例"""

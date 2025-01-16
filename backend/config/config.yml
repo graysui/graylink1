@@ -1,6 +1,5 @@
 app_name: "GrayLink"
-debug: true
-config_file: "config/config.yml"
+debug: false
 
 monitor:
   scan_interval: 300
@@ -14,13 +13,19 @@ symlink:
   target_dir: "/mnt/nastool-nfo"
   preserve_structure: true
   backup_on_conflict: true
+  backup_dir: "data/backup"
+  max_backups: 5
 
 emby:
-  host: "http://emby:8096"
-  api_key: ""
+  server_url: "http://localhost:8096"
+  api_key: null
   auto_refresh: true
   refresh_delay: 10
   path_mapping: {}
+  library_paths: []
+  timeout: 30
+  max_retries: 3
+  retry_delay: 5
 
 database:
   url: "sqlite+aiosqlite:///data/graylink.db"
@@ -29,4 +34,15 @@ database:
   pool_timeout: 30
   pool_recycle: 3600
   echo: false
-  batch_size: 1000 
+  batch_size: 1000
+
+security:
+  secret_key: ""
+  algorithm: "HS256"
+  access_token_expire_minutes: 30
+
+cache:
+  strategy: "ttl"
+  default_ttl: 300
+  maxsize: 1000
+  cleanup_interval: 3600 

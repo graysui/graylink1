@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 from loguru import logger
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, ValidationError, validator, field_validator
 from pydantic_settings import BaseSettings
 
 class ConfigError(Exception):
@@ -59,8 +59,8 @@ class SymlinkSettings(BaseModel):
 
 class EmbySettings(BaseModel):
     """Emby 配置"""
-    server_url: str = Field(default="http://emby:8096", description="Emby 服务器地址")
-    api_key: Optional[str] = Field(default=None, description="Emby API 密钥")
+    server_url: str = "http://localhost:8096"
+    api_key: Optional[str] = None
     auto_refresh: bool = Field(default=True, description="自动刷新媒体库")
     refresh_delay: int = Field(default=10, description="刷新延迟（秒）", ge=1)
     path_mapping: Dict[str, str] = Field(default_factory=dict, description="路径映射")
@@ -75,9 +75,9 @@ class EmbySettings(BaseModel):
             raise ValueError("服务器地址不能为空")
         return v.rstrip('/')
         
-    @validator('api_key')
-    def validate_api_key(cls, v):
-        if v is not None and not v:
+    @field_validator("api_key")
+    def validate_api_key(cls, v: Optional[str]) -> Optional[str]:
+        if v == "":
             raise ValueError("如果提供 API 密钥，则不能为空")
         return v
 
