@@ -1,14 +1,23 @@
 from fastapi import FastAPI
-from handlers import setting, file, gdrive, emby, symlink, monitor
+from handlers import setting, file, gdrive, emby, symlink, monitor, auth
 from fastapi.middleware.cors import CORSMiddleware
 from middleware.config import config_middleware
 import logging
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+from app.core.database import engine, Base
+from app.handlers.auth import init_default_user
+from sqlalchemy.ext.asyncio import AsyncSession
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动时的操作
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    async with AsyncSession(engine) as db:
+        await init_default_user(db)
+    
     yield
     # 关闭时的操作
 
@@ -27,6 +36,7 @@ app.add_middleware(
 app.middleware("http")(config_middleware)
 
 # 注册路由
+app.include_router(auth.router, prefix="/api", tags=["auth"])
 app.include_router(setting.router, prefix="/api", tags=["settings"])
 app.include_router(file.router, prefix="/api", tags=["files"])
 app.include_router(gdrive.router, prefix="/api", tags=["gdrive"])
