@@ -7,11 +7,9 @@ from typing import Any, Dict
 
 from sqlalchemy import Column, DateTime
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
-# 创建基础模型类
-Base = declarative_base()
+from app.core.database import Base
 
 class BaseModel(Base):
     """基础模型类

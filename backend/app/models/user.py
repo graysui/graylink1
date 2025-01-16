@@ -3,9 +3,9 @@
 """
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from datetime import datetime
-from app.core.database import Base
+from app.core.base import BaseModel
 
-class User(Base):
+class User(BaseModel):
     """
     用户模型
     包含用户的基本信息和认证信息

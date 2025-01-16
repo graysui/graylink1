@@ -6,15 +6,23 @@ import logging
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from app.core.database import engine, Base
+from app.models.user import User
 from app.handlers.auth import init_default_user
 from sqlalchemy.ext.asyncio import AsyncSession
+import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动时的操作
+    
+    # 确保data目录存在
+    os.makedirs("data", exist_ok=True)
+    
+    # 创建所有表
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
+    # 初始化默认用户
     async with AsyncSession(engine) as db:
         await init_default_user(db)
     
