@@ -6,7 +6,7 @@ import logging
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import AsyncAdaptedQueuePool
 
 from app.core.config import settings
@@ -34,21 +34,24 @@ AsyncSessionLocal = sessionmaker(
     autoflush=False
 )
 
+# 创建基类
+Base = declarative_base()
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """获取数据库会话
     
     Yields:
         数据库会话
     """
-    session = AsyncSessionLocal()
-    try:
-        yield session
-    except Exception as e:
-        logger.error(f"数据库会话异常: {str(e)}")
-        await session.rollback()
-        raise
-    finally:
-        await session.close()
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 async def init_db() -> None:
     """

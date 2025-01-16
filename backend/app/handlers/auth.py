@@ -30,7 +30,8 @@ async def get_current_user(
 
 async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User]:
     """根据用户名获取用户"""
-    result = await db.execute(User.__table__.select().where(User.username == username))
+    stmt = User.__table__.select().where(User.username == username)
+    result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> Optional[User]:
