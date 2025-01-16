@@ -10,7 +10,7 @@ from loguru import logger
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.cache import cache
+from app.core.cache import default_cache
 from app.core.database import AsyncSessionLocal
 
 class SessionManager:
