@@ -81,52 +81,39 @@ class CacheManager:
     
     def __init__(
         self,
-        strategy: str = CacheStrategy.TTL,
-        ttl: int = 300,
+        strategy: str = "ttl",
+        default_ttl: int = 300,
         maxsize: int = 1000,
-        namespace: str = "default",
         cleanup_interval: int = 3600
     ):
-        """初始化缓存管理器
-        
-        Args:
-            strategy: 缓存策略，支持 TTL 和 LRU
-            ttl: 缓存过期时间（秒）
-            maxsize: 最大缓存条目数
-            namespace: 缓存命名空间
-            cleanup_interval: 清理间隔（秒）
-        """
-        if strategy not in (CacheStrategy.TTL, CacheStrategy.LRU):
-            raise CacheError(f"不支持的缓存策略: {strategy}")
-            
         self.strategy = strategy
-        self.namespace = namespace
-        self.ttl = ttl
+        self.default_ttl = default_ttl
         self.maxsize = maxsize
         self.cleanup_interval = cleanup_interval
         
-        self.cache = (
-            TTLCache(maxsize=maxsize, ttl=ttl)
-            if strategy == CacheStrategy.TTL
-            else LRUCache(maxsize=maxsize)
-        )
+        # 缓存存储
+        self._cache = {}
+        self._access_count = 0
+        self._hit_count = 0
+        self._miss_count = 0
+        self._cleanup_count = 0
+        self._last_cleanup = None
+        self._cleanup_task = None
         
-        # 性能统计
-        self.hits = 0
-        self.misses = 0
-        self.set_operations = 0
-        self.failed_operations = 0
-        self._last_cleanup = datetime.now()
-        
-        # 监控数据
-        self._access_times: Dict[str, float] = {}
-        self._value_sizes: Dict[str, int] = {}
-        self._hot_keys: Set[str] = set()  # 热点键
-        self._expired_keys: Set[str] = set()  # 过期键
-        
-        # 启动清理任务
-        asyncio.create_task(self._cleanup_task())
-    
+    async def initialize(self):
+        """初始化缓存管理器，启动清理任务"""
+        if not self._cleanup_task:
+            self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+            
+    async def _cleanup_loop(self):
+        """清理循环任务"""
+        while True:
+            try:
+                await asyncio.sleep(self.cleanup_interval)
+                await self._cleanup_expired()
+            except Exception as e:
+                logger.error(f"缓存清理失败: {str(e)}")
+                
     def _get_full_key(self, key: str) -> str:
         """获取完整的缓存键"""
         return f"{self.namespace}:{key}"
@@ -365,11 +352,11 @@ class CacheManager:
 try:
     default_cache = CacheManager(
         strategy=settings.cache.strategy,
-        ttl=settings.cache.default_ttl,
+        default_ttl=settings.cache.default_ttl,
         maxsize=settings.cache.maxsize,
         cleanup_interval=settings.cache.cleanup_interval
     )
-except (ConfigError, Exception) as e:
+except Exception as e:
     logger.warning(f"使用默认配置创建缓存: {str(e)}")
     default_cache = CacheManager()
 

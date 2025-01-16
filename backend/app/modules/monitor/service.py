@@ -17,99 +17,98 @@ from app.core.cache import cached
 class MonitorService:
     """监控服务
     
-    管理文件监控任务，包括扫描调度和事件处理。
+    提供文件监控服务，管理扫描任务和事件处理。
+    支持本地文件和 Google Drive 文件的监控。
     """
     
     def __init__(
         self,
-        db_session: AsyncSession,
+        scanner: FileScanner,
+        drive_client: Optional[GoogleDriveClient] = None,
         event_callback: Optional[Callable] = None,
         max_retries: int = 3,
-        retry_delay: int = 60
+        retry_delay: int = 5
     ):
-        """初始化监控服务
+        """初始化服务
         
         Args:
-            db_session: 数据库会话
+            scanner: 文件扫描器
+            drive_client: Google Drive 客户端
             event_callback: 事件回调函数
             max_retries: 最大重试次数
             retry_delay: 重试延迟（秒）
         """
-        self.db_session = db_session
+        self.scanner = scanner
+        self.drive_client = drive_client
         self.event_callback = event_callback
-        self.scanner = None
-        self.is_running = False
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         
-        # 监控统计
-        self._start_time = None
+        # 服务状态
+        self.is_running = False
+        self._monitor_task = None
+        self._current_retry_count = 0
         self._total_scans = 0
         self._failed_scans = 0
-        self._last_error = None
         self._last_scan_time = None
-        self._current_retry_count = 0
-        
-    @property
-    def stats(self) -> Dict:
-        """获取监控统计信息"""
-        return {
-            "status": "running" if self.is_running else "stopped",
-            "uptime": (datetime.now() - self._start_time).total_seconds() if self._start_time else 0,
-            "total_scans": self._total_scans,
-            "failed_scans": self._failed_scans,
-            "success_rate": (self._total_scans - self._failed_scans) / self._total_scans if self._total_scans > 0 else 0,
-            "last_error": str(self._last_error) if self._last_error else None,
-            "last_scan_time": self._last_scan_time.isoformat() if self._last_scan_time else None,
-            "scanner_stats": self.scanner.stats if self.scanner else None
-        }
+        self._last_error = None
         
     async def start(self):
         """启动监控服务"""
         if self.is_running:
-            logger.warning("监控服务已在运行中")
+            logger.warning("监控服务已在运行")
             return
             
-        try:
-            # 初始化Google Drive客户端
-            gdrive_client = GoogleDriveClient(
-                settings.monitor.google_drive.client_id,
-                settings.monitor.google_drive.client_secret,
-                settings.monitor.google_drive.token_file
-            )
-            await gdrive_client.authenticate()
+        # 如果配置了 Google Drive，确保客户端已认证
+        if self.drive_client:
+            try:
+                await self.drive_client.authenticate()
+                logger.info("Google Drive 认证成功")
+            except Exception as e:
+                logger.error(f"Google Drive 认证失败: {str(e)}")
+                raise
             
-            # 初始化扫描器
-            self.scanner = FileScanner(self.db_session, gdrive_client)
-            self.is_running = True
-            self._start_time = datetime.now()
-            
-            # 启动监控循环
-            asyncio.create_task(self._monitor_loop())
-            logger.info("监控服务已启动")
-            
-        except Exception as e:
-            logger.error(f"启动监控服务失败: {str(e)}")
-            self._last_error = e
-            raise
-
+        self.is_running = True
+        self._monitor_task = asyncio.create_task(self._monitor_loop())
+        logger.info("监控服务已启动")
+        
     async def stop(self):
         """停止监控服务"""
+        if not self.is_running:
+            logger.warning("监控服务未运行")
+            return
+            
         self.is_running = False
+        if self._monitor_task:
+            self._monitor_task.cancel()
+            try:
+                await self._monitor_task
+            except asyncio.CancelledError:
+                pass
+            self._monitor_task = None
+            
         logger.info("监控服务已停止")
-
-    @cached(prefix="monitor_service", ttl=300)
-    async def get_monitored_paths(self) -> List[str]:
-        """获取所有被监控的路径"""
-        try:
-            result = await self.db_session.execute(
-                select(FileRecord.path).distinct()
-            )
-            return [path for path, in result.fetchall()]
-        except Exception as e:
-            logger.error(f"获取监控路径失败: {str(e)}")
-            return []
-
+        
+    @property
+    def stats(self) -> Dict:
+        """获取服务统计信息"""
+        stats = {
+            "is_running": self.is_running,
+            "total_scans": self._total_scans,
+            "failed_scans": self._failed_scans,
+            "last_scan_time": self._last_scan_time.isoformat() if self._last_scan_time else None,
+            "current_retry_count": self._current_retry_count,
+            "last_error": str(self._last_error) if self._last_error else None,
+            "scanner_stats": self.scanner.stats if hasattr(self.scanner, 'stats') else None,
+            "drive_enabled": self.drive_client is not None
+        }
+        
+        # 如果启用了 Google Drive，添加相关统计
+        if self.drive_client:
+            stats["drive_stats"] = self.drive_client.stats
+            
+        return stats
+        
     async def _monitor_loop(self):
         """监控循环"""
         while self.is_running:

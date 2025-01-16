@@ -4,7 +4,6 @@
 """
 from fastapi import FastAPI
 from loguru import logger
-import asyncio
 
 from app.core.config import settings
 from app.core.cache import cleanup_cache, default_cache
@@ -19,17 +18,17 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def startup_event():
         """应用启动时的初始化操作"""
-        # 启动缓存清理任务
-        asyncio.create_task(
-            cleanup_cache(interval=settings.cache.cleanup_interval)
-        )
-        logger.info("缓存清理任务已启动")
+        # 初始化缓存
+        await default_cache.initialize()
+        logger.info("缓存已初始化")
 
     @app.on_event("shutdown")
     async def shutdown_event():
         """应用关闭时的清理操作"""
         # 清理缓存
-        default_cache.clear()
+        await default_cache.clear()
+        if default_cache._cleanup_task:
+            default_cache._cleanup_task.cancel()
         logger.info("缓存已清理")
 
     return app

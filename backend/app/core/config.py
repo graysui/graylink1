@@ -60,7 +60,7 @@ class SymlinkSettings(BaseModel):
 class EmbySettings(BaseModel):
     """Emby 配置"""
     server_url: str = Field(default="http://emby:8096", description="Emby 服务器地址")
-    api_key: str = Field(default="", description="Emby API 密钥")
+    api_key: Optional[str] = Field(default=None, description="Emby API 密钥")
     auto_refresh: bool = Field(default=True, description="自动刷新媒体库")
     refresh_delay: int = Field(default=10, description="刷新延迟（秒）", ge=1)
     path_mapping: Dict[str, str] = Field(default_factory=dict, description="路径映射")
@@ -77,8 +77,8 @@ class EmbySettings(BaseModel):
         
     @validator('api_key')
     def validate_api_key(cls, v):
-        if not v:
-            raise ValueError("API 密钥不能为空")
+        if v is not None and not v:
+            raise ValueError("如果提供 API 密钥，则不能为空")
         return v
 
 class DatabaseSettings(BaseModel):

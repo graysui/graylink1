@@ -19,7 +19,13 @@ class EmbyServiceClient(EmbyClient):
         
         Args:
             config: Emby 配置
+            
+        Raises:
+            ValueError: 如果配置无效
         """
+        if not config.api_key:
+            raise ValueError("未配置 API 密钥")
+            
         super().__init__(
             server_url=config.server_url,
             api_key=config.api_key,
@@ -29,6 +35,23 @@ class EmbyServiceClient(EmbyClient):
         )
         self.config = config
         
+        # 性能统计
+        self._request_count = 0
+        self._error_count = 0
+        self._last_error = None
+        
+    @property
+    def stats(self) -> Dict:
+        """获取客户端统计信息"""
+        return {
+            "request_count": self._request_count,
+            "error_count": self._error_count,
+            "last_error": str(self._last_error) if self._last_error else None,
+            "server_url": self.server_url,
+            "timeout": self.timeout,
+            "max_retries": self.max_retries
+        }
+        
     async def get_libraries(self) -> List[Dict]:
         """获取所有媒体库
         
@@ -36,6 +59,7 @@ class EmbyServiceClient(EmbyClient):
             媒体库列表
         """
         try:
+            self._request_count += 1
             items = await self.get_items(
                 include_item_types=['CollectionFolder']
             )
@@ -48,6 +72,8 @@ class EmbyServiceClient(EmbyClient):
             } for item in items]
             
         except Exception as e:
+            self._error_count += 1
+            self._last_error = str(e)
             logger.error(f"获取媒体库列表失败: {str(e)}")
             return []
             
@@ -61,6 +87,7 @@ class EmbyServiceClient(EmbyClient):
             是否刷新成功
         """
         try:
+            self._request_count += 1
             # 检查路径是否在配置的媒体库路径中
             path = path.replace('\\', '/')
             valid = any(
@@ -74,6 +101,8 @@ class EmbyServiceClient(EmbyClient):
             return await self.refresh_library(path)
             
         except Exception as e:
+            self._error_count += 1
+            self._last_error = str(e)
             logger.error(f"刷新媒体路径失败 [{path}]: {str(e)}")
             return False
             
@@ -84,8 +113,11 @@ class EmbyServiceClient(EmbyClient):
             是否刷新成功
         """
         try:
+            self._request_count += 1
             return await self.refresh_library()
         except Exception as e:
+            self._error_count += 1
+            self._last_error = str(e)
             logger.error(f"刷新所有媒体库失败: {str(e)}")
             return False
             
@@ -96,9 +128,12 @@ class EmbyServiceClient(EmbyClient):
             是否连接成功
         """
         try:
+            self._request_count += 1
             info = await self.get_server_info()
             return bool(info and info.get('Version'))
         except Exception as e:
+            self._error_count += 1
+            self._last_error = str(e)
             logger.error(f"测试服务器连接失败: {str(e)}")
             return False
             

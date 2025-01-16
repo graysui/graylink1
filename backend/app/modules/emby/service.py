@@ -22,7 +22,7 @@ class EmbyService:
             config: Emby 配置
         """
         self.config = config
-        self.client = EmbyServiceClient(config)
+        self.client = EmbyServiceClient(config) if config.api_key else None
         
         # 服务状态
         self._is_ready = False
@@ -36,14 +36,20 @@ class EmbyService:
         return self._is_ready
         
     @property
+    def is_enabled(self) -> bool:
+        """服务是否启用"""
+        return self.client is not None
+        
+    @property
     def stats(self) -> Dict:
         """获取服务统计信息"""
         return {
+            "is_enabled": self.is_enabled,
             "is_ready": self._is_ready,
             "last_check": self._last_check.isoformat() if self._last_check else None,
             "error_count": self._error_count,
             "last_error": str(self._last_error) if self._last_error else None,
-            "client_stats": self.client.stats
+            "client_stats": self.client.stats if self.client else None
         }
         
     async def initialize(self) -> bool:
@@ -55,6 +61,12 @@ class EmbyService:
         try:
             self._last_check = datetime.now()
             
+            # 如果服务未启用，直接返回成功
+            if not self.is_enabled:
+                logger.info("Emby 服务未启用（未配置 API 密钥）")
+                self._is_ready = True
+                return True
+                
             # 测试连接
             if not await self.client.test_connection():
                 self._error_count += 1
@@ -101,9 +113,10 @@ class EmbyService:
         Returns:
             是否刷新成功
         """
-        if not self._is_ready:
-            logger.warning("Emby 服务未就绪")
-            return False
+        # 如果服务未启用，直接返回成功
+        if not self.is_enabled:
+            logger.info("Emby 服务未启用，跳过媒体刷新")
+            return True
             
         try:
             if path:

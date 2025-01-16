@@ -3,7 +3,7 @@
 提供用户认证和授权功能。
 """
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -23,53 +23,36 @@ class AuthError(Exception):
 class AuthManager:
     """认证管理器
     
-    提供用户认证、令牌管理等功能。
+    提供用户认证和授权功能。
     """
+    
+    _instance = None
+    
+    @classmethod
+    def get_instance(cls) -> 'AuthManager':
+        """获取认证管理器实例（单例）"""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
     
     def __init__(self):
         """初始化认证管理器"""
-        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        self.oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-        
-        # 性能统计
-        self.total_auth_attempts = 0
-        self.failed_auth_attempts = 0
-        self._last_cleanup = datetime.now()
+        # 认证统计
+        self._total_auth_attempts = 0
+        self._failed_auth_attempts = 0
+        self._last_auth_time = None
+        self._last_error = None
         
     @property
-    def stats(self) -> dict:
+    def stats(self) -> Dict[str, Any]:
         """获取认证统计信息"""
-        total = self.total_auth_attempts
-        failed = self.failed_auth_attempts
         return {
-            "total_attempts": total,
-            "failed_attempts": failed,
-            "success_rate": (total - failed) / total if total > 0 else 0,
-            "last_cleanup": self._last_cleanup.isoformat()
+            "total_auth_attempts": self._total_auth_attempts,
+            "failed_auth_attempts": self._failed_auth_attempts,
+            "success_rate": (self._total_auth_attempts - self._failed_auth_attempts) / self._total_auth_attempts if self._total_auth_attempts > 0 else 0,
+            "last_auth_time": self._last_auth_time.isoformat() if self._last_auth_time else None,
+            "last_error": str(self._last_error) if self._last_error else None
         }
-        
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        """验证密码
-        
-        Args:
-            plain_password: 明文密码
-            hashed_password: 哈希密码
-            
-        Returns:
-            是否验证通过
-        """
-        return self.pwd_context.verify(plain_password, hashed_password)
-        
-    def get_password_hash(self, password: str) -> str:
-        """获取密码哈希值
-        
-        Args:
-            password: 明文密码
-            
-        Returns:
-            密码哈希值
-        """
-        return self.pwd_context.hash(password)
         
     async def authenticate_user(
         self,
@@ -87,21 +70,24 @@ class AuthManager:
         Returns:
             认证通过的用户或 None
         """
-        self.total_auth_attempts += 1
+        self._total_auth_attempts += 1
+        self._last_auth_time = datetime.now()
+        
         try:
             user = await self._get_user_by_username(username, db)
             if not user:
-                self.failed_auth_attempts += 1
+                self._failed_auth_attempts += 1
                 return None
                 
             if not self.verify_password(password, user.hashed_password):
-                self.failed_auth_attempts += 1
+                self._failed_auth_attempts += 1
                 return None
                 
             return user
             
         except Exception as e:
-            self.failed_auth_attempts += 1
+            self._failed_auth_attempts += 1
+            self._last_error = str(e)
             raise AuthError(f"认证失败: {str(e)}")
             
     def create_access_token(
@@ -133,6 +119,7 @@ class AuthManager:
                 algorithm=settings.security.algorithm
             )
         except Exception as e:
+            self._last_error = str(e)
             raise AuthError(f"创建令牌失败: {str(e)}")
             
     async def get_current_user(
@@ -165,6 +152,7 @@ class AuthManager:
             return await self._get_user_by_username(username, db)
             
         except JWTError as e:
+            self._last_error = str(e)
             raise AuthError(f"解析令牌失败: {str(e)}")
             
     async def _get_user_by_username(
@@ -188,10 +176,39 @@ class AuthManager:
             return result.scalar_one_or_none()
             
         except Exception as e:
+            self._last_error = str(e)
             raise AuthError(f"获取用户失败: {str(e)}")
-
-# 创建认证管理器实例
-auth_manager = AuthManager()
+            
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+        """验证密码
+        
+        Args:
+            plain_password: 明文密码
+            hashed_password: 哈希密码
+            
+        Returns:
+            是否验证通过
+        """
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except Exception as e:
+            self._last_error = str(e)
+            raise AuthError(f"密码验证失败: {str(e)}")
+            
+    def get_password_hash(self, password: str) -> str:
+        """获取密码哈希
+        
+        Args:
+            password: 明文密码
+            
+        Returns:
+            密码哈希
+        """
+        try:
+            return pwd_context.hash(password)
+        except Exception as e:
+            self._last_error = str(e)
+            raise AuthError(f"密码哈希失败: {str(e)}")
 
 # 创建 OAuth2 密码流认证
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") 
