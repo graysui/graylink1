@@ -143,14 +143,14 @@ async def init_default_user(db: AsyncSession):
         return
     
     # 创建默认用户
-    hashed_password = get_password_hash("admin")
+    hashed_password = get_password_hash("admin123")
     default_user = User(
         username="admin",
         password=hashed_password,
         role="admin"  # 默认管理员用户
     )
     db.add(default_user)
-    await db.commit() 
+    await db.commit()
 
 @router.get("/menu")
 async def get_menu(current_user: User = Depends(get_current_user)):

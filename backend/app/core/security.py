@@ -73,7 +73,7 @@ async def get_current_superuser(
     Raises:
         HTTPException: 权限不足
     """
-    if not current_user.is_superuser:
+    if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="权限不足"
