@@ -4,9 +4,8 @@ export interface RouteMeta {
   title?: string
   icon?: string
   requiresAuth?: boolean
-  roles?: string[]
+  adminOnly?: boolean
   hidden?: boolean
-  permissions?: string[]
   keepAlive?: boolean
 }
 
@@ -48,7 +47,8 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/monitor/index.vue'),
         meta: {
           requiresAuth: true,
-          title: '监控管理'
+          title: '监控管理',
+          icon: 'Monitor'
         }
       },
       {
@@ -57,7 +57,8 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/file/index.vue'),
         meta: {
           requiresAuth: true,
-          title: '文件管理'
+          title: '文件管理',
+          icon: 'Folder'
         }
       },
       {
@@ -66,7 +67,8 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/symlink/index.vue'),
         meta: {
           requiresAuth: true,
-          title: '软链接管理'
+          title: '软链接管理',
+          icon: 'Link'
         }
       },
       {
@@ -75,7 +77,8 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/emby/index.vue'),
         meta: {
           requiresAuth: true,
-          title: 'Emby 管理'
+          title: 'Emby 管理',
+          icon: 'VideoPlay'
         }
       },
       {
@@ -84,7 +87,9 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/setting/index.vue'),
         meta: {
           requiresAuth: true,
-          title: '系统设置'
+          adminOnly: true,
+          title: '系统设置',
+          icon: 'Setting'
         }
       }
     ]

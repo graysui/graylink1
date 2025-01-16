@@ -1,9 +1,8 @@
 // 基础响应类型
 export interface ApiResponse<T> {
   code: number
+  message: string
   data: T
-  message?: string
-  status?: string
 }
 
 // 错误响应类型
@@ -149,11 +148,14 @@ export interface SymlinkState {
 
 // 系统设置类型
 export interface SystemSettings {
+  emby_url: string
+  emby_api_key: string
+  monitor_interval: number
   monitor_paths: string[]
-  emby_server?: string
-  emby_api_key?: string
-  gdrive_client_id?: string
-  gdrive_client_secret?: string
+  monitor_extensions: string[]
+  monitor_exclude_paths: string[]
+  monitor_exclude_extensions: string[]
+  monitor_auto_start: boolean
 }
 
 // 用户相关类型

@@ -1,26 +1,37 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { UserState, LoginForm } from '../types'
+import type { UserState, LoginForm, UserInfo } from '../types'
 import { userApi } from '@/api/user'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(null)
   const username = ref('')
-  const userInfo = ref<UserState['userInfo']['value']>(null)
+  const userInfo = ref<UserInfo | null>(null)
 
   const hasToken = computed(() => !!token.value)
   const hasRoles = (roles: string[]) => {
-    return userInfo.value?.roles.some(role => roles.includes(role)) ?? false
+    return userInfo.value?.role === 'admin'
+  }
+
+  const getUserInfo = async () => {
+    try {
+      const response = await userApi.getUserInfo()
+      userInfo.value = response.data.data
+      return response.data.data
+    } catch (error) {
+      console.error('Failed to get user info:', error)
+      return null
+    }
   }
 
   const login = async (form: LoginForm) => {
     const response = await userApi.login(form)
-    const tokenValue = response.data.token
+    const { token: tokenValue, username: usernameValue } = response.data.data
     token.value = tokenValue
-    username.value = response.data.username
-    userInfo.value = response.data.userInfo
+    username.value = usernameValue
     if (tokenValue) {
       localStorage.setItem('token', tokenValue)
+      await getUserInfo()
     }
   }
 
@@ -41,6 +52,7 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     hasToken,
     hasRoles,
+    getUserInfo,
     login,
     register,
     logout

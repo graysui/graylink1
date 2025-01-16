@@ -5,7 +5,7 @@ import { request } from '@/utils/request'
 export const fileApi = {
   // 获取文件列表
   getFiles(path: string): Promise<ApiResponse<FileApiResponse>> {
-    return request.get('/api/file/list', { params: { path } })
+    return request.get('/api/files', { params: { path } })
   },
 
   // 获取文件快照
@@ -15,16 +15,16 @@ export const fileApi = {
 
   // 批量操作
   batchOperation(params: BatchOperationParams): Promise<ApiResponse<void>> {
-    return request.post('/api/file/batch', params)
+    return request.post('/api/files/batch', params)
   },
 
   // 获取文件统计信息
   getStats(): Promise<ApiResponse<{ total: number, size: number }>> {
-    return request.get('/api/file/stats')
+    return request.get('/api/files/stats')
   },
 
   // 获取目录树结构
   getDirectoryTree(): Promise<ApiResponse<{ tree: FileItem[] }>> {
-    return request.get('/api/file/tree')
+    return request.get('/api/files/tree')
   }
 }

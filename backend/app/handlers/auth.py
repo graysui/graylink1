@@ -173,33 +173,41 @@ async def get_menu(current_user: User = Depends(get_current_user)):
         {
             "path": "/monitor",
             "name": "monitor",
+            "component": "monitor/index",
             "meta": {
                 "title": "监控",
-                "icon": "monitor"
+                "icon": "monitor",
+                "requiresAuth": True
             }
         },
         {
             "path": "/file",
             "name": "file",
+            "component": "file/index",
             "meta": {
                 "title": "文件",
-                "icon": "folder"
+                "icon": "folder",
+                "requiresAuth": True
             }
         },
         {
             "path": "/symlink",
             "name": "symlink",
+            "component": "symlink/index",
             "meta": {
                 "title": "软链接",
-                "icon": "link"
+                "icon": "link",
+                "requiresAuth": True
             }
         },
         {
             "path": "/emby",
             "name": "emby",
+            "component": "emby/index",
             "meta": {
                 "title": "Emby",
-                "icon": "video"
+                "icon": "video",
+                "requiresAuth": True
             }
         }
     ]
@@ -209,9 +217,12 @@ async def get_menu(current_user: User = Depends(get_current_user)):
         menu.append({
             "path": "/settings",
             "name": "settings",
+            "component": "settings/index",
             "meta": {
                 "title": "设置",
-                "icon": "setting"
+                "icon": "setting",
+                "requiresAuth": True,
+                "roles": ["admin"]
             }
         })
     

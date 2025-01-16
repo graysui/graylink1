@@ -7,25 +7,18 @@ declare module 'vue-router' {
   interface RouteMeta {
     title?: string
     requiresAuth?: boolean
-    permissions?: string[]
-    roles?: string[]
-    keepAlive?: boolean
+    adminOnly?: boolean
   }
 }
 
 // 权限检查函数
 export function checkPermission(route: RouteLocationNormalized) {
   const userStore = useUserStore()
-  const { roles = [], permissions = [] } = userStore.userInfo || {}
+  const { role } = userStore.userInfo || {}
 
-  // 检查角色权限
-  if (route.meta.roles?.length) {
-    return roles.some(role => route.meta.roles?.includes(role))
-  }
-
-  // 检查具体权限
-  if (route.meta.permissions?.length) {
-    return permissions.some(permission => route.meta.permissions?.includes(permission))
+  // 检查是否需要管理员权限
+  if (route.meta.adminOnly) {
+    return role === 'admin'
   }
 
   return true
@@ -50,4 +43,4 @@ export function handleLoginRedirect(to: RouteLocationNormalized) {
   }
 
   return true
-} 
+}
