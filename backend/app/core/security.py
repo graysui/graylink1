@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.auth import auth_manager, oauth2_scheme
 from app.models.user import User
 
 class SecurityError(Exception):
@@ -16,7 +17,7 @@ class SecurityError(Exception):
     pass
 
 async def get_current_user(
-    token: str = Depends(lambda: Depends(lambda: __import__('app.core.auth').core.auth.oauth2_scheme)),
+    token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """获取当前用户
@@ -38,8 +39,6 @@ async def get_current_user(
     )
     
     try:
-        # 动态导入以避免循环依赖
-        auth_manager = __import__('app.core.auth').core.auth.auth_manager
         user = await auth_manager.get_current_user(token, db)
         if user is None:
             raise credentials_exception

@@ -3,10 +3,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserProfile
-from app.core.security import create_access_token, get_password_hash, verify_password, get_current_user
+from app.core.auth import (
+    create_access_token,
+    get_password_hash,
+    verify_password,
+    auth_manager,
+    oauth2_scheme
+)
 from typing import Optional
 
 router = APIRouter()
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    """获取当前用户"""
+    try:
+        return await auth_manager.get_current_user(token, db)
+    except Exception as e:
+        raise HTTPException(
+            status_code=401,
+            detail="无效的认证凭据",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User]:
     """根据用户名获取用户"""

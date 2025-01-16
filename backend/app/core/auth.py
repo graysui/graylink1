@@ -214,4 +214,20 @@ class AuthManager:
 auth_manager = AuthManager.get_instance()
 
 # 创建 OAuth2 密码流认证
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# 顶层函数包装器
+def create_access_token(
+    data: dict,
+    expires_delta: Optional[timedelta] = None
+) -> str:
+    """创建访问令牌的包装函数"""
+    return auth_manager.create_access_token(data, expires_delta)
+
+def get_password_hash(password: str) -> str:
+    """获取密码哈希的包装函数"""
+    return auth_manager.get_password_hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """验证密码的包装函数"""
+    return auth_manager.verify_password(plain_password, hashed_password) 
