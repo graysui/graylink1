@@ -30,10 +30,25 @@ graylink/
 │       └── ...
 └── backend/                # 后端项目
     ├── app/               # 应用核心模块
-    ├── handlers/         # 请求处理器
-    ├── models/          # 数据模型
-    ├── schemas/         # 数据验证模式
-    └── utils/           # 工具函数
+    │   ├── core/         # 核心功能模块
+    │   │   ├── base.py   # SQLAlchemy 基类定义
+    │   │   ├── database.py # 数据库连接管理
+    │   │   ├── session.py # 会话管理
+    │   │   ├── config.py # 配置管理
+    │   │   ├── cache.py  # 缓存管理
+    │   │   └── security.py # 安全相关
+    │   ├── modules/      # 业务模块
+    │   │   ├── monitor/  # 监控模块
+    │   │   ├── symlink/  # 软链接模块
+    │   │   ├── emby/     # Emby集成
+    │   │   └── database/ # 数据库管理
+    │   ├── handlers/     # API处理器
+    │   ├── models/       # 数据模型
+    │   ├── schemas/      # 数据验证
+    │   └── utils/        # 工具函数
+    ├── config/           # 配置文件目录
+    ├── data/            # 数据存储目录
+    └── logs/            # 日志目录
 ```
 
 ## 🚀 技术栈
@@ -47,6 +62,7 @@ graylink/
 
 ### 后端技术栈
 - Python FastAPI
+- SQLAlchemy 异步 ORM
 - SQLite 数据库
 - Google Drive API
 - Emby API
@@ -64,7 +80,12 @@ npm run dev
 ```bash
 cd backend
 pip install -r requirements.txt
-python main.py
+# 创建必要的目录
+mkdir data logs
+# 复制并修改配置文件
+cp config/config.example.yml config/config.yml
+# 启动服务
+python -m uvicorn main:app --reload
 ```
 
 ## 🐳 Docker 部署
@@ -96,13 +117,63 @@ services:
   graylink:
     image: gray777/graylink:latest
     ports:
-      - "8728:8728"
-      - "8000:8000"
+      - "8728:8728"  # 前端端口
+      - "8000:8000"  # 后端API端口
     volumes:
-      - ./config:/app/backend/config
-      - ./data:/app/backend/data
-      - /path/to/gdrive:/gdrive:shared
+      - ./config:/app/backend/config  # 配置文件
+      - ./data:/app/backend/data      # 数据目录
+      - ./logs:/app/backend/logs      # 日志目录
+      - /path/to/gdrive:/gdrive:shared  # Google Drive 目录
     environment:
       - TZ=Asia/Shanghai
     restart: unless-stopped
+```
+
+## ⚙️ 配置说明
+
+### 基础配置
+```yaml
+app_name: "GrayLink"
+debug: true
+config_file: "config/config.yml"
+```
+
+### 监控配置
+```yaml
+monitor:
+  scan_interval: 300  # 扫描间隔（秒）
+  google_drive:
+    client_id: ""     # Google Drive API 客户端 ID
+    client_secret: "" # Google Drive API 客户端密钥
+    token_file: "data/gdrive_token.json"
+```
+
+### 软链接配置
+```yaml
+symlink:
+  source_dir: "D:/media/nastool"     # 媒体文件目录
+  target_dir: "D:/nastool-nfo"       # NFO文件目录
+  preserve_structure: true           # 保持目录结构
+  backup_on_conflict: true          # 发生冲突时备份
+```
+
+### Emby配置
+```yaml
+emby:
+  host: "http://localhost:8096"     # Emby服务器地址
+  api_key: ""                       # Emby API密钥
+  auto_refresh: true               # 自动刷新媒体库
+  refresh_delay: 10                # 刷新延迟（秒）
+```
+
+### 数据库配置
+```yaml
+database:
+  url: "sqlite+aiosqlite:///data/graylink.db"
+  pool_size: 20
+  max_overflow: 10
+  pool_timeout: 30
+  pool_recycle: 3600
+  echo: false                      # 调试时可设为true
+  batch_size: 1000
 ```

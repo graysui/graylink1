@@ -54,6 +54,9 @@ COPY backend/schemas ./schemas
 COPY backend/main.py ./
 COPY backend/__init__.py ./
 
+# 创建必要的目录
+RUN mkdir -p logs data
+
 # 最终镜像
 FROM python:3.11-slim
 WORKDIR /app
@@ -64,7 +67,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # 创建必要的目录
-RUN mkdir -p /app/frontend/dist /app/backend /var/log/nginx
+RUN mkdir -p /app/frontend/dist /app/backend /var/log/nginx /app/backend/logs /app/backend/data
 
 # 复制前端构建产物
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
@@ -77,11 +80,16 @@ COPY --from=backend-builder /app/backend /app/backend
 # 设置权限
 RUN chown -R www-data:www-data /app/frontend/dist && \
     chown -R www-data:www-data /var/log/nginx && \
+    chown -R www-data:www-data /app/backend/logs && \
+    chown -R www-data:www-data /app/backend/data && \
     chown -R www-data:www-data /app
 
 # 复制启动脚本并设置权限
 COPY docker-entrypoint.sh /app/
 RUN chmod +x /app/docker-entrypoint.sh
+
+# 设置工作目录
+WORKDIR /app/backend
 
 # 暴露端口
 EXPOSE 8728 8000

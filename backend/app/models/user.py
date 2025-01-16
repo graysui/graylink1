@@ -1,13 +1,17 @@
-from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.sql import func
-from app.core.database import Base
+"""
+用户模型定义
+"""
+from sqlalchemy import Column, Integer, String
+from app.core.base import BaseModel
 
-class User(Base):
+class User(BaseModel):
+    """
+    用户模型
+    包含用户的基本信息和认证信息
+    """
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password = Column(String)
-    role = Column(String, default="user")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now()) 
+    role = Column(String, default="user") 

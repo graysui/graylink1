@@ -1,14 +1,22 @@
+"""
+数据库管理器模块
+提供数据库操作的高级接口
+"""
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, event
 from sqlalchemy.sql import text
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Type, TypeVar
 from datetime import datetime, timedelta
 from loguru import logger
 from contextlib import asynccontextmanager
+import time
 from ...core.cache import cached, cache
-
+from ...core.base import BaseModel
+from ...core.session import session_manager
 from ..monitor.models import FileRecord
 from ...core.config import settings
+
+T = TypeVar('T', bound=BaseModel)
 
 class DatabaseManager:
     def __init__(self, session: AsyncSession):
@@ -24,17 +32,15 @@ class DatabaseManager:
 
     @asynccontextmanager
     async def transaction(self):
-        """事务上下文管理器"""
-        try:
-            yield
-            await self.session.commit()
-        except Exception as e:
-            await self.session.rollback()
-            self.stats["errors"] += 1
-            self.stats["last_error"] = str(e)
-            raise
-        finally:
-            await self.session.close()
+        """事务上下文管理器，使用会话管理器"""
+        async with session_manager.session() as session:
+            try:
+                self.session = session
+                yield
+            except Exception as e:
+                self.stats["errors"] += 1
+                self.stats["last_error"] = str(e)
+                raise
 
     async def _record_query_time(self, operation: str, start_time: float, query: str):
         """记录查询时间"""
@@ -46,6 +52,20 @@ class DatabaseManager:
                 "timestamp": datetime.now().isoformat()
             })
             logger.warning(f"慢查询 ({duration:.2f}s): {query}")
+
+    async def get_by_id(self, model: Type[T], id: int) -> Optional[T]:
+        """通用的通过 ID 获取记录方法"""
+        try:
+            start_time = time.time()
+            self.stats["queries"] += 1
+            
+            result = await self.session.get(model, id)
+            
+            await self._record_query_time("select", start_time, f"Get {model.__name__} by id {id}")
+            return result
+        except Exception as e:
+            logger.error(f"获取记录失败: {str(e)}")
+            raise
 
     @cached(prefix="file", ttl=300)
     async def get_file_by_id(self, file_id: str) -> Optional[FileRecord]:
@@ -105,7 +125,8 @@ class DatabaseManager:
                 "error_count": self.stats["errors"],
                 "last_error": self.stats["last_error"],
                 "slow_queries": self.stats["slow_queries"][-5:],  # 最近5个慢查询
-                "cache_stats": cache.get_stats()
+                "cache_stats": cache.get_stats(),
+                "session_stats": session_manager.get_stats()
             }
             
             return {

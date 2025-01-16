@@ -1,95 +1,195 @@
-from typing import List, Dict, Optional
+"""Emby 服务模块
+
+提供 Emby 服务相关功能。
+"""
+from typing import Optional, Dict, List
+from datetime import datetime
 from loguru import logger
-import os
-from .client import EmbyClient
-from ...core.config import settings
+
+from app.core.config import EmbyConfig
+from app.modules.emby.client import EmbyServiceClient
 
 class EmbyService:
-    """Emby服务"""
-
-    def __init__(self):
-        self.client = EmbyClient()
-        self.target_dir = settings.symlink.target_dir
-
-    async def refresh_root(self) -> bool:
-        """刷新整个媒体库"""
-        try:
-            if await self.client.refresh_root_library():
-                logger.info("刷新媒体库成功")
-                return True
-            else:
-                logger.error("刷新媒体库失败")
-                return False
-        except Exception as e:
-            logger.error(f"刷新媒体库出错：{str(e)}")
-            return False
-
-    def _map_path(self, path: str) -> str:
-        """处理路径映射"""
-        mapped_path = path
-        for local_path, emby_path in settings.emby.path_mapping.items():
-            if path.startswith(local_path):
-                mapped_path = path.replace(local_path, emby_path, 1)
-                break
-        return mapped_path
-
-    async def refresh_by_paths(self, paths: List[str]) -> Dict[str, int]:
-        """按路径刷新媒体库
+    """Emby 服务
+    
+    提供 Emby 服务相关功能的实现。
+    """
+    
+    def __init__(self, config: EmbyConfig):
+        """初始化服务
         
         Args:
-            paths: 需要刷新的路径列表
+            config: Emby 配置
         """
-        success = 0
-        failed = 0
-        processed = set()
-
+        self.config = config
+        self.client = EmbyServiceClient(config)
+        
+        # 服务状态
+        self._is_ready = False
+        self._last_check = None
+        self._error_count = 0
+        self._last_error = None
+        
+    @property
+    def is_ready(self) -> bool:
+        """服务是否就绪"""
+        return self._is_ready
+        
+    @property
+    def stats(self) -> Dict:
+        """获取服务统计信息"""
+        return {
+            "is_ready": self._is_ready,
+            "last_check": self._last_check.isoformat() if self._last_check else None,
+            "error_count": self._error_count,
+            "last_error": str(self._last_error) if self._last_error else None,
+            "client_stats": self.client.stats
+        }
+        
+    async def initialize(self) -> bool:
+        """初始化服务
+        
+        Returns:
+            是否初始化成功
+        """
         try:
-            # 获取媒体库路径列表
-            library_paths = await self.client.get_paths()
-            if not library_paths:
-                logger.error("未获取到媒体库路径")
-                return {"success": 0, "failed": 0}
-
-            # 获取媒体库路径映射
-            path_mapping = {
-                path["Path"]: path["Locations"][0]
-                for path in library_paths
-                if path.get("Locations")
-            }
-
-            # 处理每个路径
-            for path in paths:
-                full_path = os.path.join(self.target_dir, path)
-                parent_path = os.path.dirname(full_path)
+            self._last_check = datetime.now()
+            
+            # 测试连接
+            if not await self.client.test_connection():
+                self._error_count += 1
+                self._last_error = "服务器连接失败"
+                self._is_ready = False
+                return False
                 
-                # 应用路径映射
-                mapped_path = self._map_path(parent_path)
-
-                # 查找匹配的媒体库路径
-                matched_path = None
-                for lib_path, real_path in path_mapping.items():
-                    if mapped_path.startswith(real_path):
-                        matched_path = lib_path
-                        break
-
-                if not matched_path or matched_path in processed:
-                    continue
-
-                # 刷新匹配的路径
-                if await self.client.refresh_library_bypath(matched_path):
-                    success += 1
-                    processed.add(matched_path)
-                    logger.info(f"刷新媒体库路径成功：{matched_path}")
-                else:
-                    failed += 1
-                    logger.error(f"刷新媒体库路径失败：{matched_path}")
-
-            return {
-                "success": success,
-                "failed": failed,
-                "processed": list(processed)
-            }
-
+            # 获取媒体库列表
+            libraries = await self.client.get_libraries()
+            if not libraries:
+                self._error_count += 1
+                self._last_error = "获取媒体库列表失败"
+                self._is_ready = False
+                return False
+                
+            # 验证媒体库路径
+            valid_paths = set()
+            for lib in libraries:
+                if lib.get('path'):
+                    valid_paths.add(lib['path'].replace('\\', '/'))
+                    
+            for path in self.config.library_paths:
+                path = path.replace('\\', '/')
+                if not any(path.startswith(vp) for vp in valid_paths):
+                    logger.warning(f"配置的媒体库路径不存在: {path}")
+                    
+            self._is_ready = True
+            self._last_error = None
+            return True
+            
         except Exception as e:
-            logger.error(f"按路径刷新媒体库出错：{str(e)}")
-            return {"success": success, "failed": failed + 1} 
+            self._error_count += 1
+            self._last_error = str(e)
+            self._is_ready = False
+            logger.error(f"初始化 Emby 服务失败: {str(e)}")
+            return False
+            
+    async def refresh_media(self, path: Optional[str] = None) -> bool:
+        """刷新媒体
+        
+        Args:
+            path: 可选的指定路径
+            
+        Returns:
+            是否刷新成功
+        """
+        if not self._is_ready:
+            logger.warning("Emby 服务未就绪")
+            return False
+            
+        try:
+            if path:
+                return await self.client.refresh_by_path(path)
+            else:
+                return await self.client.refresh_all()
+                
+        except Exception as e:
+            self._error_count += 1
+            self._last_error = str(e)
+            logger.error(f"刷新媒体失败: {str(e)}")
+            return False
+            
+    async def get_libraries(self) -> List[Dict]:
+        """获取媒体库列表
+        
+        Returns:
+            媒体库列表
+        """
+        if not self._is_ready:
+            logger.warning("Emby 服务未就绪")
+            return []
+            
+        try:
+            return await self.client.get_libraries()
+        except Exception as e:
+            self._error_count += 1
+            self._last_error = str(e)
+            logger.error(f"获取媒体库列表失败: {str(e)}")
+            return []
+            
+    async def get_library_items(
+        self,
+        library_id: str,
+        item_type: Optional[str] = None,
+        sort_by: str = 'DateCreated',
+        sort_order: str = 'Descending',
+        limit: Optional[int] = None
+    ) -> List[Dict]:
+        """获取媒体库中的项目
+        
+        Args:
+            library_id: 媒体库ID
+            item_type: 项目类型
+            sort_by: 排序字段
+            sort_order: 排序顺序
+            limit: 限制数量
+            
+        Returns:
+            媒体项列表
+        """
+        if not self._is_ready:
+            logger.warning("Emby 服务未就绪")
+            return []
+            
+        try:
+            return await self.client.get_library_items(
+                library_id=library_id,
+                item_type=item_type,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                limit=limit
+            )
+        except Exception as e:
+            self._error_count += 1
+            self._last_error = str(e)
+            logger.error(f"获取媒体库项目失败: {str(e)}")
+            return []
+            
+    async def get_item_details(self, item_id: str) -> Optional[Dict]:
+        """获取媒体项详细信息
+        
+        Args:
+            item_id: 媒体项ID
+            
+        Returns:
+            媒体项详细信息
+        """
+        if not self._is_ready:
+            logger.warning("Emby 服务未就绪")
+            return None
+            
+        try:
+            return await self.client.get_item_details(item_id)
+        except Exception as e:
+            self._error_count += 1
+            self._last_error = str(e)
+            logger.error(f"获取媒体项详情失败: {str(e)}")
+            return None 
