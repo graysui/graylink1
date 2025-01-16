@@ -1,7 +1,7 @@
 """
 用户模型定义
 """
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Text
 from app.core.base import BaseModel
 
 class User(BaseModel):
@@ -12,6 +12,6 @@ class User(BaseModel):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    password = Column(String)
-    role = Column(String, default="user") 
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    password = Column(Text, nullable=False)  # 使用Text类型存储哈希后的密码
+    role = Column(String(20), default="user", nullable=False) 

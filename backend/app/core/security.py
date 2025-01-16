@@ -56,15 +56,7 @@ async def get_current_active_user(
         
     Returns:
         当前活动用户
-        
-    Raises:
-        HTTPException: 用户未激活
     """
-    if not current_user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="用户未激活"
-        )
     return current_user
 
 async def get_current_superuser(
