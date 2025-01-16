@@ -10,7 +10,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import AsyncAdaptedQueuePool
 
 from app.core.config import settings
-from app.core.session import session_manager
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -41,15 +40,15 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     Yields:
         数据库会话
     """
-    async with session_manager.session() as session:
-        try:
-            yield session
-        except Exception as e:
-            logger.error(f"数据库会话异常: {str(e)}")
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+    session = AsyncSessionLocal()
+    try:
+        yield session
+    except Exception as e:
+        logger.error(f"数据库会话异常: {str(e)}")
+        await session.rollback()
+        raise
+    finally:
+        await session.close()
 
 async def init_db() -> None:
     """
@@ -67,10 +66,9 @@ async def init_db() -> None:
 async def get_db_stats() -> dict:
     """
     获取数据库统计信息
-    包括会话和连接池状态
+    包括连接池状态
     """
     return {
-        "session_stats": session_manager.get_stats(),
         "pool_stats": {
             "size": engine.pool.size(),
             "checked_in": engine.pool.checkedin(),

@@ -8,12 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from app.core.base import Base as BaseModel
-from app.core.database import engine
+from app.core.database import engine, AsyncSessionLocal
 from app.core.cache import default_cache
-from app.core.session import SessionManager
+from app.core.session import SessionManager, session_manager
 from app.core.auth import AuthManager
 from app.handlers import auth, monitor, file, symlink, emby, gdrive
 from app.core.config import settings
+
+# 初始化会话管理器
+session_manager.init_session_factory(AsyncSessionLocal)
 
 # 创建应用实例
 app = FastAPI(

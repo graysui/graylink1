@@ -4,14 +4,13 @@
 """
 import time
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional, Dict, Any
+from typing import AsyncGenerator, Optional, Dict, Any, Callable
 
 from loguru import logger
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import default_cache
-from app.core.database import AsyncSessionLocal
 
 class SessionManager:
     """会话管理器
@@ -36,6 +35,11 @@ class SessionManager:
         self._failed_sessions = 0
         self._session_times = []  # 记录最近100个会话的时间
         self._last_cleanup = None
+        self._session_factory = None
+        
+    def init_session_factory(self, session_factory: Callable[[], AsyncSession]):
+        """初始化会话工厂"""
+        self._session_factory = session_factory
         
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession, None]:
@@ -44,7 +48,10 @@ class SessionManager:
         Yields:
             数据库会话
         """
-        session = AsyncSessionLocal()
+        if self._session_factory is None:
+            raise RuntimeError("Session factory not initialized")
+            
+        session = self._session_factory()
         start_time = time.time()
         self._active_sessions += 1
         self._total_sessions += 1
@@ -77,4 +84,7 @@ class SessionManager:
             "failed_sessions": self._failed_sessions,
             "avg_session_time": sum(self._session_times) / len(self._session_times) if self._session_times else 0,
             "last_cleanup": self._last_cleanup.isoformat() if self._last_cleanup else None
-        } 
+        }
+
+# 创建全局会话管理器实例
+session_manager = SessionManager.get_instance() 

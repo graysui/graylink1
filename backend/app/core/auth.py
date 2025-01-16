@@ -12,8 +12,6 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.database import get_db
-from app.core.session import session_manager
 from app.models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -211,6 +209,9 @@ class AuthManager:
         except Exception as e:
             self._last_error = str(e)
             raise AuthError(f"密码哈希失败: {str(e)}")
+
+# 创建认证管理器实例
+auth_manager = AuthManager.get_instance()
 
 # 创建 OAuth2 密码流认证
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") 
