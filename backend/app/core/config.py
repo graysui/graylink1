@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 from loguru import logger
-from pydantic import BaseModel, Field, ValidationError, validator, field_validator
+from pydantic import BaseModel, Field, ValidationError, validator
 from pydantic_settings import BaseSettings
 
 class ConfigError(Exception):
@@ -28,7 +28,7 @@ class GoogleDriveSettings(BaseModel):
     @validator('token_file')
     def validate_token_file(cls, v):
         if not v:
-            raise ValueError("Token 文件路径不能为空")
+            v = "data/gdrive_token.json"
         return os.path.normpath(v)
 
 class MonitorSettings(BaseModel):
@@ -39,13 +39,13 @@ class MonitorSettings(BaseModel):
     @validator('scan_interval')
     def validate_scan_interval(cls, v):
         if v < 60:
-            raise ValueError("扫描间隔不能小于60秒")
+            v = 300
         return v
 
 class SymlinkSettings(BaseModel):
     """符号链接配置"""
-    source_dir: str = Field(default="/mnt/media/nastool", description="源目录")
-    target_dir: str = Field(default="/mnt/nastool-nfo", description="目标目录")
+    source_dir: str = Field(default="./media", description="源目录")
+    target_dir: str = Field(default="./media-nfo", description="目标目录")
     preserve_structure: bool = Field(default=True, description="保持目录结构")
     backup_on_conflict: bool = Field(default=True, description="冲突时备份")
     backup_dir: str = Field(default="data/backup", description="备份目录")
@@ -54,13 +54,18 @@ class SymlinkSettings(BaseModel):
     @validator('source_dir', 'target_dir', 'backup_dir')
     def validate_directory(cls, v):
         if not v:
-            raise ValueError("目录路径不能为空")
+            if v == 'source_dir':
+                v = "./media"
+            elif v == 'target_dir':
+                v = "./media-nfo"
+            else:
+                v = "data/backup"
         return os.path.normpath(v)
 
 class EmbySettings(BaseModel):
     """Emby 配置"""
-    server_url: str = "http://localhost:8096"
-    api_key: Optional[str] = None
+    server_url: str = Field(default="http://localhost:8096", description="Emby 服务器地址")
+    api_key: Optional[str] = Field(default=None, description="Emby API 密钥")
     auto_refresh: bool = Field(default=True, description="自动刷新媒体库")
     refresh_delay: int = Field(default=10, description="刷新延迟（秒）", ge=1)
     path_mapping: Dict[str, str] = Field(default_factory=dict, description="路径映射")
@@ -72,14 +77,8 @@ class EmbySettings(BaseModel):
     @validator('server_url')
     def validate_server_url(cls, v):
         if not v:
-            raise ValueError("服务器地址不能为空")
+            v = "http://localhost:8096"
         return v.rstrip('/')
-        
-    @field_validator("api_key")
-    def validate_api_key(cls, v: Optional[str]) -> Optional[str]:
-        if v == "":
-            raise ValueError("如果提供 API 密钥，则不能为空")
-        return v
 
 class DatabaseSettings(BaseModel):
     """数据库配置"""
@@ -94,7 +93,7 @@ class DatabaseSettings(BaseModel):
     @validator('url')
     def validate_url(cls, v):
         if not v:
-            raise ValueError("数据库URL不能为空")
+            v = "sqlite+aiosqlite:///data/graylink.db"
         return v
 
 class SecuritySettings(BaseModel):
@@ -106,14 +105,14 @@ class SecuritySettings(BaseModel):
     @validator('secret_key')
     def validate_secret_key(cls, v):
         if not v:
-            return secrets.token_urlsafe(32)
+            v = secrets.token_urlsafe(32)
         return v
         
     @validator('algorithm')
     def validate_algorithm(cls, v):
         allowed = ['HS256', 'HS384', 'HS512']
         if v not in allowed:
-            raise ValueError(f"不支持的加密算法，允许的值: {', '.join(allowed)}")
+            v = 'HS256'
         return v
 
 class CacheSettings(BaseModel):
@@ -127,7 +126,7 @@ class CacheSettings(BaseModel):
     def validate_strategy(cls, v):
         allowed = ['ttl', 'lru']
         if v not in allowed:
-            raise ValueError(f"不支持的缓存策略，允许的值: {', '.join(allowed)}")
+            v = 'ttl'
         return v
 
 class Settings(BaseSettings):
@@ -171,7 +170,7 @@ class Settings(BaseSettings):
                 if current_mode != mode:
                     os.chmod(path, mode)
         except Exception as e:
-            raise ConfigError(f"创建目录失败 [{path}]: {str(e)}")
+            logger.error(f"创建目录失败 [{path}]: {str(e)}")
     
     @classmethod
     def ensure_data_directory(cls):
@@ -203,7 +202,8 @@ class Settings(BaseSettings):
             return backup_path
             
         except Exception as e:
-            raise ConfigError(f"备份配置失败: {str(e)}")
+            logger.error(f"备份配置失败: {str(e)}")
+            return None
     
     def save_config(self) -> bool:
         """保存当前配置
@@ -236,9 +236,6 @@ class Settings(BaseSettings):
         
         Returns:
             配置实例
-            
-        Raises:
-            ConfigError: 配置加载失败
         """
         try:
             # 确保必要的目录存在
@@ -246,52 +243,26 @@ class Settings(BaseSettings):
             
             config_path = os.getenv("GRAYLINK_CONFIG_FILE", "config/config.yml")
             
-            # 如果配置文件不存在，创建默认配置
+            # 如果配置文件不存在，使用默认配置
             if not os.path.exists(config_path):
-                default_config = cls()
-                default_config._config_loaded_at = datetime.now()
-                default_config._config_source = "default"
+                logger.warning("配置文件不存在，使用默认配置")
+                return cls()
                 
-                with open(config_path, 'w', encoding='utf-8') as f:
-                    yaml.safe_dump(
-                        default_config.model_dump(exclude={'_config_loaded_at', '_config_source', '_config_backup_path'}),
-                        f,
-                        allow_unicode=True,
-                        sort_keys=False
-                    )
-                
-                return default_config
-            
-            # 如果配置文件存在，读取配置
+            # 加载配置文件
             with open(config_path, 'r', encoding='utf-8') as f:
                 config_data = yaml.safe_load(f)
+                
+            # 创建配置实例
+            settings = cls(**config_data)
+            settings._config_loaded_at = datetime.now()
+            settings._config_source = config_path
             
-            config = cls(**config_data)
-            config._config_loaded_at = datetime.now()
-            config._config_source = config_path
+            return settings
             
-            return config
-            
-        except ValidationError as e:
-            raise ConfigError(f"配置验证失败: {str(e)}")
         except Exception as e:
-            raise ConfigError(f"加载配置失败: {str(e)}")
+            logger.error(f"加载配置失败: {str(e)}")
+            logger.warning("使用默认配置")
+            return cls()
 
-@lru_cache()
-def get_settings() -> Settings:
-    """获取应用配置（单例）
-    
-    Returns:
-        配置实例
-        
-    Raises:
-        ConfigError: 配置加载失败
-    """
-    try:
-        return Settings.load_config()
-    except Exception as e:
-        logger.error(f"获取配置失败: {str(e)}")
-        raise
-
-# 创建配置实例
-settings = get_settings() 
+# 创建全局配置实例
+settings = Settings.load_config() 

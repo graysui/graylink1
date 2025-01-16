@@ -2,6 +2,9 @@
 
 提供 GrayLink 的后端 API 服务。
 """
+import os
+import shutil
+from pathlib import Path
 import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,10 +13,29 @@ from loguru import logger
 from app.core.base import Base as BaseModel
 from app.core.database import engine, AsyncSessionLocal
 from app.core.cache import default_cache
-from app.core.session import SessionManager, session_manager
+from app.core.session import session_manager
 from app.core.auth import AuthManager
 from app.handlers import auth, monitor, file, symlink, emby, gdrive
 from app.core.config import settings
+
+def init_directories():
+    """初始化必要的目录"""
+    dirs = [
+        "data",
+        "data/backup",
+        "logs",
+        settings.symlink.source_dir,
+        settings.symlink.target_dir
+    ]
+    
+    for dir_path in dirs:
+        if dir_path.startswith("./"):
+            dir_path = Path(dir_path)
+        else:
+            dir_path = Path(dir_path)
+        if not dir_path.exists():
+            logger.info(f"创建目录: {dir_path}")
+            dir_path.mkdir(parents=True, exist_ok=True)
 
 # 初始化会话管理器
 session_manager.init_session_factory(AsyncSessionLocal)
@@ -46,8 +68,8 @@ app.include_router(gdrive.router, prefix="/api/gdrive", tags=["Google Drive"])
 async def startup():
     """应用启动时的初始化操作"""
     try:
-        # 确保数据目录存在
-        settings.ensure_data_directory()
+        # 初始化必要的目录
+        init_directories()
         
         # 创建数据库表
         async with engine.begin() as conn:
@@ -55,9 +77,6 @@ async def startup():
             
         # 初始化缓存
         await default_cache.initialize()
-        
-        # 初始化会话管理器
-        session_manager = SessionManager.get_instance()
         
         # 初始化认证管理器
         auth_manager = AuthManager.get_instance()
