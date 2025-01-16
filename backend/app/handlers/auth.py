@@ -61,11 +61,16 @@ async def login(form_data: UserLogin, db: AsyncSession = Depends(get_db)):
     return {
         "code": 0,
         "data": {
+            "token": access_token,
             "username": user.username,
-            "role": user.role
+            "userInfo": {
+                "username": user.username,
+                "roles": [user.role],
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+                "updated_at": user.updated_at.isoformat() if user.updated_at else None
+            }
         },
-        "message": "登录成功",
-        "token": access_token
+        "message": "登录成功"
     }
 
 @router.post("/auth/register")
